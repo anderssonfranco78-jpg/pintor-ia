@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Estudio de Pintura Digital Progresiva — Pinturas de Carbono</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: #140f0c;
+      color: #f7ede4;
+      font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Barra de Controles Superior (No sale en el video grabado, limpia y accesible en celular y PC) */
+    #control-bar {
+      width: 100%;
+      padding: 8px 12px;
+      background: rgba(26, 19, 15, 0.95);
+      border-bottom: 1px solid rgba(216, 158, 130, 0.28);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      align-items: center;
+      justify-content: center;
+      z-index: 30;
+      flex-shrink: 0;
+    }
+
+    .ctrl-btn {
+      background: linear-gradient(180deg, #382920, #261c16);
+      color: #f8ede3;
+      border: 1px solid rgba(218, 162, 134, 0.42);
+      border-radius: 10px;
+      padding: 8px 13px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: transform 0.1s ease, background 0.15s ease, border-color 0.15s ease;
+      white-space: nowrap;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35);
+    }
+    .ctrl-btn:hover {
+      border-color: #f0b89a;
+      background: linear-gradient(180deg, #48352a, #31241c);
+    }
+    .ctrl-btn:active {
+      transform: scale(0.95);
+    }
+    .ctrl-btn.upload-btn {
+      background: linear-gradient(180deg, #d89b7e, #b5785c);
+      color: #1f1510;
+      border-color: #ffe0cf;
+      font-weight: 800;
+    }
+    .ctrl-btn.record-btn {
+      background: linear-gradient(180deg, #d6382d, #9e1f17);
+      color: #ffffff;
+      border-color: #ff9e96;
+    }
+    .ctrl-btn.record-btn.recording {
+      animation: pulseRec 1s infinite alternate;
+      background: linear-gradient(180deg, #ff3b30, #b81d13);
+    }
+    .ctrl-btn.share-btn {
+      background: linear-gradient(180deg, #25d366, #169c46);
+      color: #0f2918;
+      border-color: #a4f7c2;
+      font-weight: 800;
+      display: none;
+    }
+    @keyframes pulseRec {
+      0% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.7); }
+      100% { box-shadow: 0 0 0 8px rgba(255, 59, 48, 0); }
+    }
+
+    select.ctrl-select {
+      background: #261c16;
+      color: #f8ede3;
+      border: 1px solid rgba(218, 162, 134, 0.42);
+      border-radius: 10px;
+      padding: 7px 10px;
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      outline: none;
+    }
+
+    /* Contenedor del Estudio (Se ajusta automáticamente a cualquier pantalla de celular o PC) */
+    #studio-stage {
+      flex: 1;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    #studio-canvas {
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      border-radius: 22px;
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.65);
+      display: block;
+    }
+
+    #toast-banner {
+      position: fixed;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(34, 24, 18, 0.94);
+      color: #ffe8d6;
+      border: 1px solid rgba(216, 158, 130, 0.55);
+      padding: 9px 18px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+      z-index: 50;
+      text-align: center;
+      max-width: 92vw;
+    }
+
+    @media (max-width: 768px) {
+      #control-bar {
+        padding: 6px 8px;
+        gap: 5px;
+      }
+      .ctrl-btn {
+        padding: 7px 10px;
+        font-size: 11.5px;
+      }
+      select.ctrl-select {
+        padding: 6px 8px;
+        font-size: 11.5px;
+      }
+      #studio-stage {
+        padding: 4px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Barra de Herramientas Interactiva -->
+  <div id="control-bar">
+    <input type="file" id="file-input" accept="image/*" style="display:none;" />
+    <button id="btn-upload" class="ctrl-btn upload-btn" title="Subir cualquier foto de tu teléfono o computadora">
+      📸 Subir Foto
+    </button>
+    <button id="btn-record" class="ctrl-btn record-btn" title="Reiniciar desde cero y grabar todo el video del proceso">
+      🔴 Grabar Proceso (Video)
+    </button>
+    <button id="btn-share" class="ctrl-btn share-btn" title="Compartir el video grabado por WhatsApp o redes">
+      📲 Enviar Video
+    </button>
+    <button id="btn-replay" class="ctrl-btn" title="Volver a pintar desde cero">
+      🔄 Repetir desde Cero
+    </button>
+    <button id="btn-save-img" class="ctrl-btn" title="Descargar cuadro pintado en alta definición">
+      🖼️ Guardar HD
+    </button>
+    <select id="sel-layout" class="ctrl-select" title="Cambiar orientación del estudio">
+      <option value="auto">📐 Diseño: Automático</option>
+      <option value="horizontal">🖥️ Horizontal (16:9 X/Twitter)</option>
+      <option value="vertical">📱 Vertical (9:16 Celular/Reel)</option>
+    </select>
+    <select id="sel-duration" class="ctrl-select" title="Duración total del pintado">
+      <option value="12">⏱️ 12 seg</option>
+      <option value="20" selected>⏱️ 20 seg (Original)</option>
+      <option value="30">⏱️ 30 seg</option>
+    </select>
+  </div>
+
+  <!-- Escenario Principal donde se renderiza y graba todo el Estudio -->
+  <div id="studio-stage">
+    <canvas id="studio-canvas" width="1600" height="900"></canvas>
+  </div>
+
+  <div id="toast-banner"></div>
+
+<script>
+// ============================================================================
+// 1. DEMO PORTRAIT (SUNDAR PICHAI) & CONFIGURATION
+// ============================================================================
+const DEFAULT_PORTRAIT_B64 = "data:image/jpeg;base64,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";
+
+const BRUSH_TIERS = [
+  { size: 126, pass: 1, passTitle: 'Block-in',     passRange: 'SIZES 126 → 69', startFrac: 0.00, endFrac: 0.10 },
+  { size: 69,  pass: 1, passTitle: 'Block-in',     passRange: 'SIZES 126 → 69', startFrac: 0.10, endFrac: 0.22 },
+  { size: 38,  pass: 2, passTitle: 'Sculpting',    passRange: 'SIZES 38 → 21',  startFrac: 0.22, endFrac: 0.36 },
+  { size: 21,  pass: 2, passTitle: 'Sculpting',    passRange: 'SIZES 38 → 21',  startFrac: 0.36, endFrac: 0.50 },
+  { size: 12,  pass: 3, passTitle: 'Refinement',   passRange: 'SIZES 12 → 7',   startFrac: 0.50, endFrac: 0.66 },
+  { size: 7,   pass: 3, passTitle: 'Refinement',   passRange: 'SIZES 12 → 7',   startFrac: 0.66, endFrac: 0.80 },
+  { size: 4,   pass: 4, passTitle: 'Fine details', passRange: 'SIZES 4 → 3',    startFrac: 0.80, endFrac: 0.91 },
+  { size: 3,   pass: 4, passTitle: 'Fine details', passRange: 'SIZES 4 → 3',    startFrac: 0.91, endFrac: 1.00 },
+];
+
+const PAINT_RES = 720; // Resolución interna cuadrada 1:1 del lienzo de pintura
+const paintCanvas = document.createElement('canvas');
+paintCanvas.width = PAINT_RES;
+paintCanvas.height = PAINT_RES;
+const paintCtx = paintCanvas.getContext('2d');
+
+const refCanvas = document.createElement('canvas');
+refCanvas.width = PAINT_RES;
+refCanvas.height = PAINT_RES;
+const refCtx = refCanvas.getContext('2d', { willReadFrequently: true });
+
+// Buffers suavizados por escala para que las pasadas gruesas tomen colores promediados y las finas detalles exactos
+const blurLargeCanvas = document.createElement('canvas');
+blurLargeCanvas.width = PAINT_RES; blurLargeCanvas.height = PAINT_RES;
+const blurLargeCtx = blurLargeCanvas.getContext('2d', { willReadFrequently: true });
+
+const blurMedCanvas = document.createElement('canvas');
+blurMedCanvas.width = PAINT_RES; blurMedCanvas.height = PAINT_RES;
+const blurMedCtx = blurMedCanvas.getContext('2d', { willReadFrequently: true });
+
+const studioCanvas = document.getElementById('studio-canvas');
+const studioCtx = studioCanvas.getContext('2d');
+
+let totalDuration = 20.0;
+let layoutMode = 'auto'; // 'auto' | 'horizontal' | 'vertical'
+let isVerticalStudio = false;
+
+let strokeQueue = [];
+let renderedStrokeIdx = 0;
+let animStartTime = performance.now();
+let currentElapsed = 0.0;
+let isPaused = false;
+let manualSeekMode = false;
+
+let activeBrushInfo = {
+  size: 126,
+  pass: 1,
+  passTitle: 'Block-in',
+  passRange: 'SIZES 126 → 69',
+  hex: '#42372d',
+  r: 66, g: 55, b: 45,
+  cx: PAINT_RES * 0.35,
+  cy: PAINT_RES * 0.35,
+  tierIdx: 0,
+};
+
+// Toast Helper
+let toastTimer = null;
+function showToast(msg, ms = 2800) {
+  const el = document.getElementById('toast-banner');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.opacity = '1';
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.style.opacity = '0'; }, ms);
+}
+
+// Deterministic PRNG for organic stroke order
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a |= 0;
+    a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function rgbToHex(r, g, b) {
+  const toH = (n) => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, '0');
+  return '#' + toH(r) + toH(g) + toH(b);
+}
+
+// ============================================================================
+// 2. IMAGE ANALYSIS & MULTI-PASS BRUSHSTROKE PLANNER
+// ============================================================================
+let refPixels = null;
+let medPixels = null;
+let largePixels = null;
+let edgeMagMap = new Float32Array(PAINT_RES * PAINT_RES);
+let edgeAngleMap = new Float32Array(PAINT_RES * PAINT_RES);
+
+function analyzeAndPlanImage(imgElement) {
+  // 1. Smart 1:1 Center-Crop onto refCanvas
+  const iw = imgElement.naturalWidth || imgElement.width;
+  const ih = imgElement.naturalHeight || imgElement.height;
+  const side = Math.min(iw, ih);
+  const sx = (iw - side) * 0.5;
+  const sy = (ih - side) * 0.35; // Slight upward bias to frame faces nicely
+
+  refCtx.clearRect(0, 0, PAINT_RES, PAINT_RES);
+  refCtx.drawImage(imgElement, sx, sy, side, side, 0, 0, PAINT_RES, PAINT_RES);
+
+  // Create multi-scale blurred references via downscale/upscale (works on 100% of mobile & desktop browsers!)
+  const tmpSmall = document.createElement('canvas');
+  tmpSmall.width = 48; tmpSmall.height = 48;
+  const tmpSmallCtx = tmpSmall.getContext('2d');
+  tmpSmallCtx.drawImage(refCanvas, 0, 0, 48, 48);
+  blurLargeCtx.imageSmoothingEnabled = true;
+  blurLargeCtx.drawImage(tmpSmall, 0, 0, 48, 48, 0, 0, PAINT_RES, PAINT_RES);
+
+  const tmpMed = document.createElement('canvas');
+  tmpMed.width = 160; tmpMed.height = 160;
+  const tmpMedCtx = tmpMed.getContext('2d');
+  tmpMedCtx.drawImage(refCanvas, 0, 0, 160, 160);
+  blurMedCtx.imageSmoothingEnabled = true;
+  blurMedCtx.drawImage(tmpMed, 0, 0, 160, 160, 0, 0, PAINT_RES, PAINT_RES);
+
+  refPixels   = refCtx.getImageData(0, 0, PAINT_RES, PAINT_RES).data;
+  medPixels   = blurMedCtx.getImageData(0, 0, PAINT_RES, PAINT_RES).data;
+  largePixels = blurLargeCtx.getImageData(0, 0, PAINT_RES, PAINT_RES).data;
+
+  // 2. Compute Sobel Edge Magnitude & Tangent Orientation Map
+  const lum = new Float32Array(PAINT_RES * PAINT_RES);
+  for (let i = 0; i < PAINT_RES * PAINT_RES; i++) {
+    const p = i * 4;
+    lum[i] = 0.299 * refPixels[p] + 0.587 * refPixels[p + 1] + 0.114 * refPixels[p + 2];
+  }
+
+  let maxGrad = 1.0;
+  for (let y = 1; y < PAINT_RES - 1; y++) {
+    for (let x = 1; x < PAINT_RES - 1; x++) {
+      const idx = y * PAINT_RES + x;
+      const gx =
+        -lum[(y - 1) * PAINT_RES + (x - 1)] + lum[(y - 1) * PAINT_RES + (x + 1)]
+        - 2 * lum[y * PAINT_RES + (x - 1)]   + 2 * lum[y * PAINT_RES + (x + 1)]
+        - lum[(y + 1) * PAINT_RES + (x - 1)] + lum[(y + 1) * PAINT_RES + (x + 1)];
+      const gy =
+        -lum[(y - 1) * PAINT_RES + (x - 1)] - 2 * lum[(y - 1) * PAINT_RES + x] - lum[(y - 1) * PAINT_RES + (x + 1)]
+        + lum[(y + 1) * PAINT_RES + (x - 1)] + 2 * lum[(y + 1) * PAINT_RES + x] + lum[(y + 1) * PAINT_RES + (x + 1)];
+      const mag = Math.hypot(gx, gy);
+      edgeMagMap[idx] = mag;
+      if (mag > maxGrad) maxGrad = mag;
+      // Brushstroke tangent is perpendicular to image gradient!
+      edgeAngleMap[idx] = Math.atan2(gy, gx) + Math.PI * 0.5;
+    }
+  }
+  for (let i = 0; i < edgeMagMap.length; i++) {
+    edgeMagMap[i] = Math.min(1.0, edgeMagMap[i] / (maxGrad * 0.65));
+  }
+
+  // 3. Build Multi-Pass Stroke Schedule Across All 8 Brush Sizes (126px -> 3px)
+  const rng = mulberry32(20261111);
+  strokeQueue = [];
+
+  for (let tIdx = 0; tIdx < BRUSH_TIERS.length; tIdx++) {
+    const tier = BRUSH_TIERS[tIdx];
+    const bSize = tier.size;
+    const tierStrokes = [];
+
+    // Grid spacing proportional to brush size
+    const step = tIdx === 0 ? 52
+               : tIdx === 1 ? 32
+               : tIdx === 2 ? 19
+               : tIdx === 3 ? 12
+               : tIdx === 4 ? 8
+               : tIdx === 5 ? 6
+               : tIdx === 6 ? 4
+               : 3;
+
+    const srcData = tIdx <= 1 ? largePixels : (tIdx <= 3 ? medPixels : refPixels);
+
+    for (let y = Math.floor(step * 0.5); y < PAINT_RES; y += step) {
+      for (let x = Math.floor(step * 0.5); x < PAINT_RES; x += step) {
+        const jx = Math.max(0, Math.min(PAINT_RES - 1, Math.round(x + (rng() - 0.5) * step * 0.85)));
+        const jy = Math.max(0, Math.min(PAINT_RES - 1, Math.round(y + (rng() - 0.5) * step * 0.85)));
+        const flat = jy * PAINT_RES + jx;
+        const edgeW = edgeMagMap[flat];
+
+        // Center-face priority + edge saliency filter for fine brushes so strokes focus where detail matters!
+        const distCenter = Math.hypot((jx - PAINT_RES * 0.5) / (PAINT_RES * 0.5), (jy - PAINT_RES * 0.48) / (PAINT_RES * 0.5));
+        const faceBoost = distCenter < 0.72 ? 0.35 : 0.0;
+
+        if (tIdx === 4 && edgeW + faceBoost < 0.10 && rng() < 0.35) continue;
+        if (tIdx === 5 && edgeW + faceBoost < 0.14 && rng() < 0.52) continue;
+        if (tIdx === 6 && edgeW + faceBoost < 0.18 && rng() < 0.65) continue;
+        if (tIdx === 7 && edgeW + faceBoost < 0.22 && rng() < 0.72) continue;
+
+        const p = flat * 4;
+        const r = srcData[p], g = srcData[p + 1], b = srcData[p + 2];
+        const angle = edgeAngleMap[flat] + (rng() - 0.5) * (tIdx <= 1 ? 0.8 : 0.25);
+
+        tierStrokes.push({
+          x: jx,
+          y: jy,
+          r, g, b,
+          hex: rgbToHex(r, g, b),
+          angle,
+          tierIdx: tIdx,
+          size: bSize,
+          sortKey: Math.floor(jy / (step * 3)) * 1000 + jx * ((Math.floor(jy / (step * 3)) % 2 === 0) ? 1 : -1) + (rng() - 0.5) * 45,
+        });
+      }
+    }
+
+    // Sort strokes in a natural sweeping painter's path so the brush cursor glides smoothly instead of teleporting wildly!
+    tierStrokes.sort((a, b) => a.sortKey - b.sortKey);
+
+    const n = tierStrokes.length;
+    for (let i = 0; i < n; i++) {
+      const s = tierStrokes[i];
+      s.progress = tier.startFrac + ((i + 1) / n) * (tier.endFrac - tier.startFrac);
+      strokeQueue.push(s);
+    }
+  }
+
+  restartPainting();
+}
+
+function resetBlankCanvas() {
+  paintCtx.fillStyle = '#f6f2eb';
+  paintCtx.fillRect(0, 0, PAINT_RES, PAINT_RES);
+  renderedStrokeIdx = 0;
+}
+
+function restartPainting() {
+  resetBlankCanvas();
+  animStartTime = performance.now();
+  currentElapsed = 0.0;
+  isPaused = false;
+  if (manualSeekMode) {
+    manualSeekMode = false;
+    requestAnimationFrame(animate);
+  }
+}
+
+// Render Single Painterly Brushstroke Dab on paintCanvas
+function drawBrushStroke(s) {
+  const { x, y, r, g, b, angle, size, tierIdx } = s;
+  paintCtx.save();
+  paintCtx.translate(x, y);
+  paintCtx.rotate(angle);
+
+  if (tierIdx <= 1) {
+    // Pass 1 (126px, 69px): Soft atmospheric radial wash block-in (matches 0:03 screenshot!)
+    const rad = size * 0.62;
+    const grad = paintCtx.createRadialGradient(0, 0, rad * 0.12, 0, 0, rad);
+    grad.addColorStop(0.0, `rgba(${r},${g},${b}, 0.82)`);
+    grad.addColorStop(0.62, `rgba(${r},${g},${b}, 0.48)`);
+    grad.addColorStop(1.0, `rgba(${r},${g},${b}, 0.0)`);
+    paintCtx.fillStyle = grad;
+    paintCtx.beginPath();
+    paintCtx.scale(1.18, 0.88);
+    paintCtx.arc(0, 0, rad, 0, Math.PI * 2);
+    paintCtx.fill();
+  } else if (tierIdx <= 5) {
+    // Passes 2 & 3 (38px, 21px, 12px, 7px): Directional bristle capsule strokes
+    const rx = size * 0.68;
+    const ry = size * 0.36;
+    const grad = paintCtx.createRadialGradient(0, 0, ry * 0.15, 0, 0, rx);
+    grad.addColorStop(0.0, `rgba(${r},${g},${b}, 0.90)`);
+    grad.addColorStop(0.75, `rgba(${r},${g},${b}, 0.62)`);
+    grad.addColorStop(1.0, `rgba(${r},${g},${b}, 0.0)`);
+    paintCtx.fillStyle = grad;
+    paintCtx.beginPath();
+    paintCtx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);
+    paintCtx.fill();
+  } else {
+    // Pass 4 (4px, 3px): Fine detail crisp brush dabs + subtle local detail lock-in
+    const rx = size * 0.78;
+    const ry = size * 0.48;
+    paintCtx.fillStyle = `rgba(${r},${g},${b}, 0.92)`;
+    paintCtx.beginPath();
+    paintCtx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);
+    paintCtx.fill();
+  }
+  paintCtx.restore();
+
+  // At the end of Pass 3 & during Pass 4, gently blend local micro-detail from refCanvas around the brush tip so glasses, eyes, teeth & beard become 100% crisp like the Sundar Pichai 0:20 finale!
+  if (tierIdx >= 6) {
+    const patchR = tierIdx === 6 ? 14 : 20;
+    paintCtx.save();
+    paintCtx.globalAlpha = tierIdx === 6 ? 0.24 : 0.42;
+    paintCtx.beginPath();
+    paintCtx.arc(x, y, patchR, 0, Math.PI * 2);
+    paintCtx.clip();
+    paintCtx.drawImage(refCanvas, x - patchR, y - patchR, patchR * 2, patchR * 2, x - patchR, y - patchR, patchR * 2, patchR * 2);
+    paintCtx.restore();
+  }
+}
+
+function advancePaintingToProgress(targetProgress) {
+  const clampedProg = Math.max(0.0, Math.min(1.0, targetProgress));
+  if (clampedProg === 0.0) {
+    resetBlankCanvas();
+  }
+
+  let lastStroke = null;
+  while (renderedStrokeIdx < strokeQueue.length && strokeQueue[renderedStrokeIdx].progress <= clampedProg) {
+    lastStroke = strokeQueue[renderedStrokeIdx];
+    drawBrushStroke(lastStroke);
+    renderedStrokeIdx++;
+  }
+
+  // Final polish pass at >= 99.2% so completed portrait is ultra-crisp painterly HD
+  if (clampedProg >= 0.992) {
+    paintCtx.save();
+    paintCtx.globalAlpha = 0.22;
+    paintCtx.drawImage(refCanvas, 0, 0);
+    paintCtx.restore();
+  }
+
+  // Update active brush telemetry for studio UI cards
+  let activeTierIdx = 0;
+  for (let i = 0; i < BRUSH_TIERS.length; i++) {
+    if (clampedProg >= BRUSH_TIERS[i].startFrac) activeTierIdx = i;
+  }
+  const tier = BRUSH_TIERS[activeTierIdx];
+  activeBrushInfo.size = tier.size;
+  activeBrushInfo.pass = tier.pass;
+  activeBrushInfo.passTitle = tier.passTitle;
+  activeBrushInfo.passRange = tier.passRange;
+  activeBrushInfo.tierIdx = activeTierIdx;
+
+  if (lastStroke) {
+    activeBrushInfo.hex = lastStroke.hex;
+    activeBrushInfo.r = lastStroke.r;
+    activeBrushInfo.g = lastStroke.g;
+    activeBrushInfo.b = lastStroke.b;
+    activeBrushInfo.cx += (lastStroke.x - activeBrushInfo.cx) * 0.45;
+    activeBrushInfo.cy += (lastStroke.y - activeBrushInfo.cy) * 0.45;
+  }
+}
+
+// ============================================================================
+// 3. COMPOSITE STUDIO CANVAS RENDERER (16:9 HORIZONTAL & 9:16 VERTICAL MOBILE)
+// ============================================================================
+function roundRectPath(ctx, x, y, w, h, r) {
+  const rad = Math.min(r, w * 0.5, h * 0.5);
+  ctx.beginPath();
+  ctx.moveTo(x + rad, y);
+  ctx.arcTo(x + w, y, x + w, y + h, rad);
+  ctx.arcTo(x + w, y + h, x, y + h, rad);
+  ctx.arcTo(x, y + h, x, y, rad);
+  ctx.arcTo(x, y, x + w, y, rad);
+  ctx.closePath();
+}
+
+function fillCard(ctx, x, y, w, h, r = 18) {
+  ctx.save();
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.36)';
+  ctx.shadowBlur = 18;
+  ctx.shadowOffsetY = 6;
+  ctx.fillStyle = '#251c16';
+  roundRectPath(ctx, x, y, w, h, r);
+  ctx.fill();
+  ctx.restore();
+
+  ctx.strokeStyle = 'rgba(255, 215, 185, 0.12)';
+  ctx.lineWidth = 1.5;
+  roundRectPath(ctx, x, y, w, h, r);
+  ctx.stroke();
+}
+
+function updateStudioDimensions() {
+  const wantVert = layoutMode === 'vertical' || (layoutMode === 'auto' && window.innerHeight > window.innerWidth * 1.08);
+  if (wantVert !== isVerticalStudio || (wantVert && studioCanvas.width !== 1080) || (!wantVert && studioCanvas.width !== 1600)) {
+    isVerticalStudio = wantVert;
+    if (isVerticalStudio) {
+      studioCanvas.width = 1080;
+      studioCanvas.height = 1920;
+    } else {
+      studioCanvas.width = 1600;
+      studioCanvas.height = 900;
+    }
+  }
+}
+
+function renderStudioFrame(progress) {
+  updateStudioDimensions();
+  const W = studioCanvas.width;
+  const H = studioCanvas.height;
+  const ctx = studioCtx;
+
+  // 1. Warm Terracotta / Cocoa Studio Background Gradient (Exact match to Sundar Pichai X post!)
+  const bgGrad = ctx.createLinearGradient(0, 0, W, H);
+  bgGrad.addColorStop(0.0, '#cfa087');
+  bgGrad.addColorStop(0.5, '#c18e74');
+  bgGrad.addColorStop(1.0, '#9e6f58');
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, W, H);
+
+  if (!isVerticalStudio) {
+    // ========================================================================
+    // HORIZONTAL 16:9 STUDIO LAYOUT (1600 x 900 — Identical to X Video)
+    // ========================================================================
+    const leftX = 44, leftW = 336;
+    const centerSize = 812;
+    const centerX = (W - centerSize) * 0.5;
+    const centerY = (H - centerSize) * 0.5;
+    const rightX = W - 44 - 336, rightW = 336;
+
+    // --- LEFT CARD 1: REFERENCE ---
+    fillCard(ctx, leftX, 44, leftW, 430, 18);
+    ctx.fillStyle = '#b8a698';
+    ctx.font = '700 13px Inter, Segoe UI, sans-serif';
+    ctx.fillText('REFERENCE', leftX + 22, 76);
+
+    // Status Dot
+    ctx.fillStyle = '#d99b7e';
+    ctx.beginPath();
+    ctx.arc(leftX + leftW - 26, 71, 5.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Reference Image Rounded Square
+    const refBoxX = leftX + 20, refBoxY = 94, refBoxS = leftW - 40;
+    ctx.save();
+    roundRectPath(ctx, refBoxX, refBoxY, refBoxS, refBoxS, 12);
+    ctx.clip();
+    ctx.drawImage(refCanvas, refBoxX, refBoxY, refBoxS, refBoxS);
+    ctx.restore();
+
+    ctx.fillStyle = '#8e7d70';
+    ctx.font = '500 13px Inter, Segoe UI, sans-serif';
+    ctx.fillText('Uploaded Portrait • 1:1', leftX + 22, 452);
+
+    // --- LEFT CARD 2: PASS INFO ---
+    fillCard(ctx, leftX, 494, leftW, 168, 18);
+    ctx.fillStyle = '#b8a698';
+    ctx.font = '700 12.5px Inter, Segoe UI, sans-serif';
+    ctx.fillText(`PASS ${activeBrushInfo.pass} OF 4 • ${activeBrushInfo.passRange}`, leftX + 22, 530);
+
+    ctx.fillStyle = '#f7efe8';
+    ctx.font = '700 28px Inter, Segoe UI, sans-serif';
+    ctx.fillText(activeBrushInfo.passTitle, leftX + 22, 576);
+
+    // Pass Progress Bar
+    const passStart = (activeBrushInfo.pass - 1) * 0.25;
+    const passProg = Math.max(0.04, Math.min(1.0, (progress - passStart) / 0.25));
+    ctx.fillStyle = '#3b2d25';
+    roundRectPath(ctx, leftX + 22, 614, leftW - 44, 12, 6);
+    ctx.fill();
+    ctx.fillStyle = '#d69b7e';
+    roundRectPath(ctx, leftX + 22, 614, (leftW - 44) * passProg, 12, 6);
+    ctx.fill();
+
+    // --- LEFT CARD 3: TIMELINE ---
+    fillCard(ctx, leftX, 682, leftW, 174, 18);
+    ctx.fillStyle = '#b8a698';
+    ctx.font = '700 12.5px Inter, Segoe UI, sans-serif';
+    ctx.fillText('TIMELINE', leftX + 22, 716);
+
+    const curSec = (progress * totalDuration).toFixed(1).padStart(4, '0');
+    const totSec = totalDuration.toFixed(1).padStart(4, '0');
+    ctx.fillStyle = '#f7efe8';
+    ctx.font = '700 27px monospace';
+    ctx.fillText(`0:${curSec}`, leftX + 22, 760);
+    ctx.fillStyle = '#8e7d70';
+    ctx.font = '600 18px monospace';
+    ctx.fillText(`/ 0:${totSec}`, leftX + 132, 760);
+
+    // 4 Segmented Pass Bars
+    const segGap = 8;
+    const segW = (leftW - 44 - segGap * 3) / 4;
+    for (let s = 0; s < 4; s++) {
+      const sx = leftX + 22 + s * (segW + segGap);
+      ctx.fillStyle = '#3b2d25';
+      roundRectPath(ctx, sx, 784, segW, 10, 5);
+      ctx.fill();
+      const sFill = Math.max(0, Math.min(1, (progress - s * 0.25) / 0.25));
+      if (sFill > 0) {
+        ctx.fillStyle = '#d69b7e';
+        roundRectPath(ctx, sx, 784, segW * sFill, 10, 5);
+        ctx.fill();
+      }
+    }
+    ctx.fillStyle = '#8e7d70';
+    ctx.font = '500 13px Inter, Segoe UI, sans-serif';
+    ctx.fillText(`Brush ${activeBrushInfo.size}px • 30 fps`, leftX + 22, 832);
+
+    // --- CENTER PAINTING CANVAS ---
+    drawCenterPaintingBoard(ctx, centerX, centerY, centerSize, progress);
+
+    // --- RIGHT CARD 1: COLOR SWATCH ---
+    fillCard(ctx, rightX, 44, rightW, 240, 18);
+    ctx.fillStyle = '#b8a698';
+    ctx.font = '700 13px Inter, Segoe UI, sans-serif';
+    ctx.fillText('COLOR SWATCH', rightX + 22, 76);
+
+    // Active Color Box
+    ctx.fillStyle = activeBrushInfo.hex;
+    roundRectPath(ctx, rightX + 22, 94, rightW - 44, 104, 12);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+    ctx.lineWidth = 2;
+    roundRectPath(ctx, rightX + 22, 94, rightW - 44, 104, 12);
+    ctx.stroke();
+
+    // HEX Pill
+    ctx.fillStyle = '#1c1410';
+    roundRectPath(ctx, rightX + 22, 214, rightW - 44, 48, 10);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,215,185,0.14)';
+    ctx.stroke();
+    ctx.fillStyle = '#8e7d70';
+    ctx.font = '700 13px Inter, Segoe UI, sans-serif';
+    ctx.fillText('HEX', rightX + 38, 243);
+    ctx.fillStyle = '#f7efe8';
+    ctx.font = '700 21px monospace';
+    ctx.fillText(activeBrushInfo.hex, rightX + 96, 245);
+
+    // --- RIGHT CARD 2: BRUSH SIZE (PX) ---
+    fillCard(ctx, rightX, 304, rightW, 552, 18);
+    ctx.fillStyle = '#b8a698';
+    ctx.font = '700 13px Inter, Segoe UI, sans-serif';
+    ctx.fillText('BRUSH SIZE (PX)', rightX + 22, 338);
+
+    for (let i = 0; i < BRUSH_TIERS.length; i++) {
+      const bt = BRUSH_TIERS[i];
+      const ry = 356 + i * 60;
+      const isAct = (i === activeBrushInfo.tierIdx);
+
+      ctx.fillStyle = isAct ? '#d89b7e' : '#1e1611';
+      roundRectPath(ctx, rightX + 20, ry, rightW - 40, 50, 11);
+      ctx.fill();
+      if (!isAct) {
+        ctx.strokeStyle = 'rgba(255,215,185,0.12)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+
+      // Proportional Brush Dot Icon
+      const dotR = Math.max(2.2, Math.min(13.5, Math.sqrt(bt.size) * 1.15));
+      ctx.fillStyle = isAct ? '#1f1510' : '#f5ece4';
+      ctx.beginPath();
+      ctx.arc(rightX + 48, ry + 25, dotR, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = isAct ? '#1f1510' : '#f5ece4';
+      ctx.font = '700 16px monospace';
+      ctx.fillText(`${bt.size} px`, rightX + 78, ry + 30);
+
+      if (isAct) {
+        ctx.fillStyle = '#2d1e17';
+        ctx.font = '800 12px Inter, Segoe UI, sans-serif';
+        ctx.fillText('ACTIVE', rightX + rightW - 84, ry + 30);
+      }
+    }
+  } else {
+    // ========================================================================
+    // VERTICAL 9:16 MOBILE STUDIO LAYOUT (1080 x 1920 — Tailored for Phones!)
+    // ========================================================================
+    const pad = 32;
+    const topY = 32;
+    const cardH = 310;
+    const leftCardW = 320;
+    const rightCardW = W - pad * 2 - leftCardW - 20;
+
+    // Top-Left: REFERENCE Card
+    fillCard(ctx, pad, topY, leftCardW, cardH, 20);
+    ctx.fillStyle = '#b8a698';
+    ctx.font = '700 14px Inter, Segoe UI, sans-serif';
+    ctx.fillText('REFERENCE', pad + 20, topY + 34);
+    ctx.fillStyle = '#d99b7e';
+    ctx.beginPath();
+    ctx.arc(pad + leftCardW - 24, topY + 29, 6, 0, Math.PI * 2);
+    ctx.fill();
+
+    const refS = 216;
+    ctx.save();
+    roundRectPath(ctx, pad + 20, topY + 48, refS, refS, 14);
+    ctx.clip();
+    ctx.drawImage(refCanvas, pad + 20, topY + 48, refS, refS);
+    ctx.restore();
+    ctx.fillStyle = '#8e7d70';
+    ctx.font = '600 13px Inter, Segoe UI, sans-serif';
+    ctx.fillText('Uploaded Portrait • 1:1', pad + 20, topY + 290);
+
+    // Top-Right: PASS + COLOR SWATCH + TIMELINE Combined Card
+    const rx = pad + leftCardW + 20;
+    fillCard(ctx, rx, topY, rightCardW, cardH, 20);
+    ctx.fillStyle = '#b8a698';
+    ctx.font = '700 14px Inter, Segoe UI, sans-serif';
+    ctx.fillText(`PASS ${activeBrushInfo.pass} OF 4 • ${activeBrushInfo.passRange}`, rx + 24, topY + 36);
+
+    ctx.fillStyle = '#f7efe8';
+    ctx.font = '800 34px Inter, Segoe UI, sans-serif';
+    ctx.fillText(activeBrushInfo.passTitle, rx + 24, topY + 84);
+
+    const curSec = (progress * totalDuration).toFixed(1).padStart(4, '0');
+    const totSec = totalDuration.toFixed(1).padStart(4, '0');
+    ctx.fillStyle = '#d89b7e';
+    ctx.font = '700 26px monospace';
+    ctx.fillText(`0:${curSec} / 0:${totSec}`, rx + 24, topY + 130);
+
+    // Color Swatch on Right Half of Top-Right Card
+    const swX = rx + rightCardW - 250, swY = topY + 24, swW = 226, swH = 126;
+    ctx.fillStyle = activeBrushInfo.hex;
+    roundRectPath(ctx, swX, swY, swW, swH, 14);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.fillStyle = '#1b130e';
+    roundRectPath(ctx, swX, swY + swH + 12, swW, 50, 10);
+    ctx.fill();
+    ctx.fillStyle = '#8e7d70';
+    ctx.font = '700 14px sans-serif';
+    ctx.fillText('HEX', swX + 18, swY + swH + 43);
+    ctx.fillStyle = '#fff';
+    ctx.font = '700 22px monospace';
+    ctx.fillText(activeBrushInfo.hex, swX + 72, swY + swH + 44);
+
+    // 4 Segmented Pass Progress Bars at Bottom of Top-Right Card
+    const segGap = 10;
+    const segW = (rightCardW - 48 - segGap * 3) / 4;
+    for (let s = 0; s < 4; s++) {
+      const sx = rx + 24 + s * (segW + segGap);
+      ctx.fillStyle = '#3b2d25';
+      roundRectPath(ctx, sx, topY + 246, segW, 14, 7);
+      ctx.fill();
+      const sFill = Math.max(0, Math.min(1, (progress - s * 0.25) / 0.25));
+      if (sFill > 0) {
+        ctx.fillStyle = '#d69b7e';
+        roundRectPath(ctx, sx, topY + 246, segW * sFill, 14, 7);
+        ctx.fill();
+      }
+    }
+    ctx.fillStyle = '#8e7d70';
+    ctx.font = '600 14px Inter, Segoe UI, sans-serif';
+    ctx.fillText(`Brush ${activeBrushInfo.size}px • 30 fps`, rx + 24, topY + 288);
+
+    // Center Square Painting Canvas (1016 x 1016)
+    const boardSize = W - pad * 2;
+    const boardY = topY + cardH + 26;
+    drawCenterPaintingBoard(ctx, pad, boardY, boardSize, progress);
+
+    // Bottom Card: 8 BRUSH SIZES (2x4 Grid)
+    const botY = boardY + boardSize + 26;
+    const botH = H - botY - 32;
+    fillCard(ctx, pad, botY, boardSize, botH, 20);
+    ctx.fillStyle = '#b8a698';
+    ctx.font = '700 15px Inter, Segoe UI, sans-serif';
+    ctx.fillText('BRUSH SIZE (PX)', pad + 24, botY + 36);
+
+    const colW = (boardSize - 64) / 2;
+    for (let i = 0; i < BRUSH_TIERS.length; i++) {
+      const bt = BRUSH_TIERS[i];
+      const col = Math.floor(i / 4);
+      const row = i % 4;
+      const bx = pad + 24 + col * (colW + 16);
+      const by = botY + 56 + row * 94;
+      const isAct = (i === activeBrushInfo.tierIdx);
+
+      ctx.fillStyle = isAct ? '#d89b7e' : '#1e1611';
+      roundRectPath(ctx, bx, by, colW, 76, 14);
+      ctx.fill();
+
+      const dotR = Math.max(3.5, Math.min(16, Math.sqrt(bt.size) * 1.35));
+      ctx.fillStyle = isAct ? '#1f1510' : '#f5ece4';
+      ctx.beginPath();
+      ctx.arc(bx + 38, by + 38, dotR, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = isAct ? '#1f1510' : '#f5ece4';
+      ctx.font = '700 22px monospace';
+      ctx.fillText(`${bt.size} px`, bx + 74, by + 46);
+
+      if (isAct) {
+        ctx.fillStyle = '#2d1e17';
+        ctx.font = '800 15px Inter, Segoe UI, sans-serif';
+        ctx.fillText('ACTIVE', bx + colW - 88, by + 44);
+      }
+    }
+  }
+}
+
+function drawCenterPaintingBoard(ctx, x, y, size, progress) {
+  ctx.save();
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.42)';
+  ctx.shadowBlur = 24;
+  ctx.shadowOffsetY = 8;
+  ctx.fillStyle = '#f6f2eb';
+  roundRectPath(ctx, x, y, size, size, 8);
+  ctx.fill();
+  ctx.restore();
+
+  ctx.save();
+  roundRectPath(ctx, x, y, size, size, 8);
+  ctx.clip();
+  ctx.drawImage(paintCanvas, 0, 0, PAINT_RES, PAINT_RES, x, y, size, size);
+
+  // Draw Animated Circular Brush Cursor Ring (like in the Sundar Pichai screenshots!)
+  if (progress < 0.996) {
+    const scale = size / PAINT_RES;
+    const cx = x + activeBrushInfo.cx * scale;
+    const cy = y + activeBrushInfo.cy * scale;
+    const ringR = Math.max(7, activeBrushInfo.size * 0.55 * scale);
+
+    ctx.strokeStyle = 'rgba(45, 36, 30, 0.78)';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.arc(cx, cy, ringR, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
+    ctx.lineWidth = 1.0;
+    ctx.beginPath();
+    ctx.arc(cx, cy, ringR + 1.4, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.fillStyle = 'rgba(45, 36, 30, 0.85)';
+    ctx.beginPath();
+    ctx.arc(cx, cy, 2.2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+
+  ctx.strokeStyle = '#3a2b22';
+  ctx.lineWidth = 2.5;
+  roundRectPath(ctx, x, y, size, size, 8);
+  ctx.stroke();
+}
+
+// ============================================================================
+// 4. VIDEO RECORDING FROM ZERO (MOBILE & PC) + WHATSAPP SHARE
+// ============================================================================
+let mediaRecorder = null;
+let recordedChunks = [];
+let isRecordingProcess = false;
+let lastRecordedBlob = null;
+let lastRecordedExt = 'webm';
+
+function getSupportedMimeType() {
+  const types = [
+    'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
+    'video/mp4',
+    'video/webm;codecs=vp9',
+    'video/webm;codecs=vp8',
+    'video/webm',
+  ];
+  for (const t of types) {
+    if (window.MediaRecorder && MediaRecorder.isTypeSupported(t)) return t;
+  }
+  return '';
+}
+
+function startRecordingFromZero() {
+  if (isRecordingProcess) {
+    stopRecordingProcess();
+    return;
+  }
+  if (!window.MediaRecorder || !studioCanvas.captureStream) {
+    showToast('⚠️ Tu navegador no soporta grabación directa de lienzo.');
+    return;
+  }
+
+  // Restart painting from 0:00.0
+  restartPainting();
+  renderStudioFrame(0.0);
+
+  const mimeType = getSupportedMimeType();
+  lastRecordedExt = mimeType.includes('mp4') ? 'mp4' : 'webm';
+  const stream = studioCanvas.captureStream(30);
+  recordedChunks = [];
+
+  try {
+    mediaRecorder = mimeType
+      ? new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8000000 })
+      : new MediaRecorder(stream);
+  } catch (e) {
+    mediaRecorder = new MediaRecorder(stream);
+  }
+
+  mediaRecorder.ondataavailable = (ev) => {
+    if (ev.data && ev.data.size > 0) recordedChunks.push(ev.data);
+  };
+
+  mediaRecorder.onstop = () => {
+    isRecordingProcess = false;
+    const btnRec = document.getElementById('btn-record');
+    if (btnRec) {
+      btnRec.classList.remove('recording');
+      btnRec.textContent = '🔴 Grabar Proceso (Video)';
+    }
+
+    if (recordedChunks.length === 0) return;
+    lastRecordedBlob = new Blob(recordedChunks, { type: mimeType || 'video/webm' });
+    const url = URL.createObjectURL(lastRecordedBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `pintura_progresiva_${Date.now()}.${lastRecordedExt}`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    const btnShare = document.getElementById('btn-share');
+    if (btnShare && navigator.canShare) {
+      btnShare.style.display = 'inline-flex';
+    }
+    showToast('✅ ¡Video del proceso grabado y descargado! Listo para enviar 📲', 4200);
+  };
+
+  isRecordingProcess = true;
+  mediaRecorder.start(200);
+
+  const btnRec = document.getElementById('btn-record');
+  if (btnRec) {
+    btnRec.classList.add('recording');
+    btnRec.textContent = '⏹️ Grabando... (Pulsa para detener)';
+  }
+  showToast('🔴 Grabando proceso desde 0:00.0... Se descargará al llegar al 100 %', 3500);
+}
+
+function stopRecordingProcess() {
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+    mediaRecorder.stop();
+  }
+  isRecordingProcess = false;
+}
+
+async function shareRecordedVideo() {
+  if (!lastRecordedBlob) return;
+  const file = new File([lastRecordedBlob], `pintura_digital.${lastRecordedExt}`, { type: lastRecordedBlob.type });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({
+        title: 'Pintura Digital Progresiva',
+        text: 'Mira cómo se pintó esta foto paso a paso 🎨',
+        files: [file],
+      });
+    } catch (err) {
+      // User cancelled share sheet
+    }
+  } else {
+    showToast('El video ya se descargó en tu dispositivo 📥');
+  }
+}
+
+// ============================================================================
+// 5. UI EVENT LISTENERS & DETERMINISTIC RENDER HOOKS
+// ============================================================================
+const fileInput = document.getElementById('file-input');
+document.getElementById('btn-upload')?.addEventListener('click', () => fileInput?.click());
+
+fileInput?.addEventListener('change', (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const img = new Image();
+    img.onload = () => {
+      if (isRecordingProcess) stopRecordingProcess();
+      analyzeAndPlanImage(img);
+      showToast('📸 ¡Foto cargada! Recreando pintura desde 126px hasta 3px...');
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+  fileInput.value = '';
+});
+
+// Drag & Drop support on PC
+window.addEventListener('dragover', (e) => e.preventDefault());
+window.addEventListener('drop', (e) => {
+  e.preventDefault();
+  const file = e.dataTransfer?.files?.[0];
+  if (file && file.type.startsWith('image/')) {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const img = new Image();
+      img.onload = () => {
+        if (isRecordingProcess) stopRecordingProcess();
+        analyzeAndPlanImage(img);
+        showToast('📸 ¡Foto cargada! Recreando pintura paso a paso...');
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+});
+
+document.getElementById('btn-record')?.addEventListener('click', startRecordingFromZero);
+document.getElementById('btn-share')?.addEventListener('click', shareRecordedVideo);
+document.getElementById('btn-replay')?.addEventListener('click', () => {
+  if (isRecordingProcess) stopRecordingProcess();
+  restartPainting();
+  showToast('🔄 Repitiendo proceso de pintado desde cero');
+});
+
+document.getElementById('btn-save-img')?.addEventListener('click', () => {
+  const url = studioCanvas.toDataURL('image/png');
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `estudio_pintura_${Date.now()}.png`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  showToast('🖼️ ¡Imagen HD guardada!');
+});
+
+document.getElementById('sel-layout')?.addEventListener('change', (e) => {
+  layoutMode = e.target.value;
+  renderStudioFrame(Math.min(1.0, currentElapsed / totalDuration));
+});
+
+document.getElementById('sel-duration')?.addEventListener('change', (e) => {
+  totalDuration = parseFloat(e.target.value) || 20.0;
+  restartPainting();
+  showToast(`⏱️ Duración ajustada a ${totalDuration} segundos`);
+});
+
+// Deterministic renderAt(tSeconds) hook for automated verification
+window.renderAt = function(tSeconds) {
+  manualSeekMode = true;
+  resetBlankCanvas();
+  currentElapsed = Math.max(0, Math.min(totalDuration, tSeconds));
+  const prog = currentElapsed / totalDuration;
+  advancePaintingToProgress(prog);
+  renderStudioFrame(prog);
+};
+
+// Main Animation Loop
+function animate(now) {
+  if (!manualSeekMode && strokeQueue.length > 0) {
+    currentElapsed = (now - animStartTime) / 1000.0;
+    const prog = Math.min(1.0, currentElapsed / totalDuration);
+    advancePaintingToProgress(prog);
+    renderStudioFrame(prog);
+
+    // If recording from zero, stop automatically ~0.6s after reaching 100%
+    if (isRecordingProcess && currentElapsed >= totalDuration + 0.65) {
+      stopRecordingProcess();
+    }
+  }
+  if (!manualSeekMode) {
+    requestAnimationFrame(animate);
+  }
+}
+
+const initParams = new URLSearchParams(window.location.search);
+if (initParams.get('layout')) {
+  layoutMode = initParams.get('layout');
+}
+if (initParams.has('t')) {
+  manualSeekMode = true;
+}
+
+// Load Default Demo Portrait on Startup
+const demoImg = new Image();
+demoImg.onload = () => {
+  analyzeAndPlanImage(demoImg);
+  window.__PAINTER_READY__ = true;
+  if (initParams.has('t')) {
+    window.renderAt(parseFloat(initParams.get('t')));
+  } else {
+    requestAnimationFrame(animate);
+  }
+};
+demoImg.src = DEFAULT_PORTRAIT_B64;
+</script>
+</body>
+</html>
