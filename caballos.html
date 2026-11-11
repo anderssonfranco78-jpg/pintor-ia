@@ -1,0 +1,1612 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Laboratorio de Animación Equina — Camino A (2.5D) • Camino B (3D Three.js) • Comparativa 4 Modelos</title>
+<style>
+  :root {
+    --bg-dark: #12100e;
+    --panel-bg: rgba(28, 22, 18, 0.92);
+    --accent: #d99b66;
+    --accent-bright: #f3b882;
+    --text-main: #f7efe8;
+    --text-muted: #b5a395;
+  }
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  html, body {
+    width: 100%;
+    height: 100%;
+    background: var(--bg-dark);
+    color: var(--text-main);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Top Control Bar */
+  #topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 16px;
+    background: rgba(20, 15, 12, 0.96);
+    border-bottom: 1px solid rgba(217, 155, 102, 0.28);
+    z-index: 30;
+  }
+  .mode-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .tab-btn, .ctrl-btn {
+    appearance: none;
+    border: 1px solid rgba(217, 155, 102, 0.35);
+    background: #261d17;
+    color: var(--text-main);
+    font-size: 13px;
+    font-weight: 700;
+    padding: 8px 13px;
+    border-radius: 999px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.16s ease;
+    white-space: nowrap;
+  }
+  .tab-btn:hover, .ctrl-btn:hover {
+    background: #362920;
+    border-color: var(--accent);
+  }
+  .tab-btn.active {
+    background: linear-gradient(135deg, #e2a56e, #b87642);
+    color: #1a110b;
+    border-color: #ffd3ab;
+    box-shadow: 0 3px 12px rgba(217, 155, 102, 0.35);
+  }
+  .ctrl-btn.record {
+    background: linear-gradient(135deg, #e0443e, #a8201a);
+    border-color: #ff8e88;
+    color: #fff;
+  }
+  .ctrl-btn.record.recording {
+    animation: recPulse 1s infinite alternate;
+  }
+  .ctrl-btn.rig-active {
+    background: #1b3b2b;
+    border-color: #4ade80;
+    color: #86efac;
+  }
+  @keyframes recPulse {
+    0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+    100% { box-shadow: 0 0 0 9px rgba(239, 68, 68, 0); }
+  }
+
+  .right-controls {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .slider-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #231a14;
+    padding: 5px 11px;
+    border-radius: 999px;
+    border: 1px solid rgba(217, 155, 102, 0.25);
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .slider-wrap input[type="range"] {
+    width: 75px;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+
+  /* Main Stage */
+  #stage {
+    position: relative;
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+  #main-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  /* Info HUD Overlay */
+  #hud-card {
+    position: absolute;
+    left: 16px;
+    bottom: 16px;
+    max-width: 440px;
+    background: rgba(22, 16, 13, 0.86);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(217, 155, 102, 0.35);
+    border-radius: 14px;
+    padding: 12px 15px;
+    pointer-events: none;
+    z-index: 20;
+  }
+  #hud-title {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--accent-bright);
+    margin-bottom: 4px;
+  }
+  #hud-desc {
+    font-size: 12.5px;
+    line-height: 1.45;
+    color: #dfd3c8;
+  }
+
+  /* 4-Model Split Labels Overlay */
+  #quad-labels {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    display: none;
+    z-index: 15;
+  }
+  .quad-title {
+    position: absolute;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: clamp(18px, 2.4vw, 28px);
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 2px 6px rgba(0,0,0,0.9), 0 0 2px #000;
+    transform: translateX(-50%);
+  }
+  .quad-divider-v {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: rgba(0,0,0,0.55);
+  }
+  .quad-divider-h {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: rgba(0,0,0,0.55);
+  }
+
+  #toast {
+    position: fixed;
+    top: 68px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(22, 16, 13, 0.95);
+    color: #fff;
+    border: 1px solid var(--accent);
+    padding: 9px 18px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+    z-index: 100;
+  }
+  #toast.show { opacity: 1; }
+  #file-input { display: none; }
+</style>
+<!-- Three.js for Camino B & 4-Model Arena Comparison -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+
+<div id="topbar">
+  <div class="mode-tabs">
+    <button class="tab-btn active" data-mode="caminoB" id="tab-b">🐎 Camino B: Escultura 3D Orgánica (Three.js 360°)</button>
+    <button class="tab-btn" data-mode="caminoA" id="tab-a">🖼️ Camino A: Marioneta Fotográfica 2.5D (Malla + Huesos)</button>
+    <button class="tab-btn" data-mode="quad" id="tab-quad">⚔️ Comparativa X: Fable 5.2 vs Carbon vs Astra vs Hydrogen</button>
+  </div>
+
+  <div class="right-controls">
+    <button class="ctrl-btn" id="btn-rig">🦴 Ver Esqueleto / Huesos</button>
+    <button class="ctrl-btn" id="btn-env">🌿 Escenario: Pradera Realista</button>
+    <button class="ctrl-btn" id="btn-photo" style="display:none;">📸 Subir Foto de Caballo</button>
+    <div class="slider-wrap">
+      <span>⚡ Galope:</span>
+      <input type="range" id="speed-slider" min="0.15" max="1.8" step="0.05" value="1.0" />
+      <span id="speed-val">1.0x</span>
+    </div>
+    <button class="ctrl-btn record" id="btn-record">🔴 Grabar Video (10s)</button>
+  </div>
+</div>
+
+<input type="file" id="file-input" accept="image/*" />
+
+<div id="stage">
+  <canvas id="main-canvas"></canvas>
+
+  <div id="quad-labels">
+    <div class="quad-divider-v"></div>
+    <div class="quad-divider-h"></div>
+    <div class="quad-title" style="left: 25%; top: 14px;">Fable 5.2</div>
+    <div class="quad-title" style="left: 75%; top: 14px;">Gemini 4 Carbon</div>
+    <div class="quad-title" style="left: 25%; top: calc(50% + 14px);">Gpt-6 Astra</div>
+    <div class="quad-title" style="left: 75%; top: calc(50% + 14px);">Gemini 4 Hydrogen</div>
+  </div>
+
+  <div id="hud-card">
+    <div id="hud-title">🐎 Camino B: Escultura 3D Orgánica (360° en Tiempo Real)</div>
+    <div id="hud-desc">
+      Inspirado en tu foto del caballo bayo dorado (<i>buckskin</i> con cabos y crines negras). Construido 100 % en código con anatomía curva articulada (18 huesos, 4 patas de 3 segmentos, 70 hebras de crin y cola con física de viento). <b>Arrastra con el mouse o dedo para girar 360°.</b>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ============================================================================
+// GLOBAL STATE & UI CONTROLS
+// ============================================================================
+let currentMode = 'caminoB'; // 'caminoA' | 'caminoB' | 'quad'
+let showRigDebug = false;
+let gallopSpeed = 1.0;
+let envStyle = 'meadow'; // 'meadow' (Foto Pradera) | 'canyon' (Atardecer X Agua)
+let globalTime = 0;
+
+const stageEl = document.getElementById('stage');
+const mainCanvas = document.getElementById('main-canvas');
+const hudTitle = document.getElementById('hud-title');
+const hudDesc = document.getElementById('hud-desc');
+const quadLabels = document.getElementById('quad-labels');
+const btnPhoto = document.getElementById('btn-photo');
+const btnEnv = document.getElementById('btn-env');
+const btnRig = document.getElementById('btn-rig');
+
+function showToast(msg, ms = 3200) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(window.__toastTimer);
+  window.__toastTimer = setTimeout(() => t.classList.remove('show'), ms);
+}
+
+// ============================================================================
+// THREE.JS RENDERER & CAMINO B / QUAD SCENE SETUP
+// ============================================================================
+const renderer = new THREE.WebGLRenderer({
+  canvas: mainCanvas,
+  antialias: true,
+  preserveDrawingBuffer: true,
+});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.08;
+
+// Offscreen 2D Canvas for Camino A (2.5D Photo Puppet) & Video Compositing
+const canvas2D = document.createElement('canvas');
+const ctx2D = canvas2D.getContext('2d');
+
+// Main Scene for Camino B (360° Organic Buckskin Horse)
+const sceneB = new THREE.Scene();
+const cameraB = new THREE.PerspectiveCamera(42, 16 / 9, 0.1, 300);
+cameraB.position.set(4.8, 2.3, 6.4);
+
+const controlsB = new THREE.OrbitControls(cameraB, mainCanvas);
+controlsB.target.set(0, 1.45, 0);
+controlsB.enableDamping = true;
+controlsB.dampingFactor = 0.06;
+controlsB.maxPolarAngle = Math.PI * 0.49;
+controlsB.minDistance = 2.6;
+controlsB.maxDistance = 18.0;
+
+// Create Sky Dome Texture for Camino B (Day Meadow, Sunset Canyon, Starry Night)
+function createSkyTexture(style) {
+  const c = document.createElement('canvas');
+  c.width = 512;
+  c.height = 512;
+  const g = c.getContext('2d');
+  const grad = g.createLinearGradient(0, 0, 0, 512);
+  if (style === 'meadow') {
+    grad.addColorStop(0.0, '#b9cde0');
+    grad.addColorStop(0.38, '#dce6ef');
+    grad.addColorStop(0.52, '#eef2f5');
+    grad.addColorStop(0.55, '#597343');
+    grad.addColorStop(1.0, '#3e5929');
+  } else if (style === 'canyon') {
+    grad.addColorStop(0.0, '#78351e');
+    grad.addColorStop(0.35, '#cf7543');
+    grad.addColorStop(0.52, '#f4b375');
+    grad.addColorStop(0.55, '#8c583a');
+    grad.addColorStop(1.0, '#4d3222');
+  } else {
+    grad.addColorStop(0.0, '#070b19');
+    grad.addColorStop(0.38, '#111c38');
+    grad.addColorStop(0.52, '#1d2d4f');
+    grad.addColorStop(0.55, '#13241b');
+    grad.addColorStop(1.0, '#0b1710');
+  }
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 512, 512);
+  if (style === 'night') {
+    g.fillStyle = '#ffffff';
+    for (let i = 0; i < 160; i++) {
+      const sx = (i * 73) % 512;
+      const sy = (i * 41) % 240;
+      g.fillRect(sx, sy, (i % 3 === 0) ? 2 : 1.2, (i % 3 === 0) ? 2 : 1.2);
+    }
+    g.fillStyle = '#fef9c3';
+    g.beginPath();
+    g.arc(390, 95, 22, 0, Math.PI * 2);
+    g.fill();
+  }
+  return new THREE.CanvasTexture(c);
+}
+
+let skyTexMeadow = createSkyTexture('meadow');
+let skyTexCanyon = createSkyTexture('canyon');
+let skyTexNight = createSkyTexture('night');
+sceneB.background = skyTexMeadow;
+sceneB.fog = new THREE.FogExp2(0xd8e2ea, 0.014);
+
+// Lighting for Scene B
+const hemiLightB = new THREE.HemisphereLight(0xf5f9ff, 0x4d6b32, 0.85);
+sceneB.add(hemiLightB);
+
+const sunLightB = new THREE.DirectionalLight(0xfff5e4, 1.35);
+sunLightB.position.set(12, 18, 10);
+sunLightB.castShadow = true;
+sunLightB.shadow.mapSize.width = 2048;
+sunLightB.shadow.mapSize.height = 2048;
+sunLightB.shadow.camera.near = 1;
+sunLightB.shadow.camera.far = 45;
+const d = 8;
+sunLightB.shadow.camera.left = -d;
+sunLightB.shadow.camera.right = d;
+sunLightB.shadow.camera.top = d;
+sunLightB.shadow.camera.bottom = -d;
+sceneB.add(sunLightB);
+
+const rimLightB = new THREE.DirectionalLight(0xdbeafe, 0.55);
+rimLightB.position.set(-10, 6, -8);
+sceneB.add(rimLightB);
+
+// ============================================================================
+// BUILD PROCEDURAL ENVIRONMENT FOR CAMINO B (MEADOW + DISTANT FOREST + CANYON)
+// ============================================================================
+const envGroupB = new THREE.Group();
+sceneB.add(envGroupB);
+
+// Ground Plane with Rich Procedural Meadow / Water / Night Shader Texture
+function createGroundTexture(style) {
+  const c = document.createElement('canvas');
+  c.width = 512;
+  c.height = 512;
+  const ctx = c.getContext('2d');
+  if (style === 'meadow') {
+    ctx.fillStyle = '#5c7c32';
+    ctx.fillRect(0, 0, 512, 512);
+    for (let i = 0; i < 4000; i++) {
+      const x = Math.random() * 512;
+      const y = Math.random() * 512;
+      ctx.fillStyle = i % 3 === 0 ? '#749642' : (i % 3 === 1 ? '#486623' : '#89a852');
+      ctx.fillRect(x, y, 8, 2);
+    }
+  } else if (style === 'canyon') {
+    ctx.fillStyle = '#9e7a56';
+    ctx.fillRect(0, 0, 512, 512);
+    for (let i = 0; i < 2500; i++) {
+      const x = Math.random() * 512;
+      const y = Math.random() * 512;
+      ctx.fillStyle = i % 2 === 0 ? '#b28d67' : '#856444';
+      ctx.fillRect(x, y, 10, 3);
+    }
+  } else {
+    ctx.fillStyle = '#182b1d';
+    ctx.fillRect(0, 0, 512, 512);
+    for (let i = 0; i < 3000; i++) {
+      const x = Math.random() * 512;
+      const y = Math.random() * 512;
+      ctx.fillStyle = i % 2 === 0 ? '#213b28' : '#112115';
+      ctx.fillRect(x, y, 8, 2);
+    }
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(18, 18);
+  return tex;
+}
+
+const groundTexMeadow = createGroundTexture('meadow');
+const groundTexCanyon = createGroundTexture('canyon');
+const groundTexNight = createGroundTexture('night');
+
+const groundMatB = new THREE.MeshStandardMaterial({
+  map: groundTexMeadow,
+  roughness: 0.88,
+  metalness: 0.05,
+});
+const groundMeshB = new THREE.Mesh(new THREE.PlaneGeometry(160, 160), groundMatB);
+groundMeshB.rotation.x = -Math.PI / 2;
+groundMeshB.receiveShadow = true;
+envGroupB.add(groundMeshB);
+
+// 3D Instanced Grass Blades / Stones passing under the horse
+const grassCount = 900;
+const grassGeo = new THREE.ConeGeometry(0.035, 0.34, 4);
+grassGeo.translate(0, 0.17, 0);
+const grassMat = new THREE.MeshStandardMaterial({ color: 0x6c8f38, roughness: 0.8 });
+const grassInst = new THREE.InstancedMesh(grassGeo, grassMat, grassCount);
+const grassData = [];
+const dummyObj = new THREE.Object3D();
+for (let i = 0; i < grassCount; i++) {
+  const gx = (Math.random() - 0.5) * 36;
+  const gz = (Math.random() - 0.5) * 26;
+  const gs = 0.6 + Math.random() * 1.1;
+  grassData.push({ x: gx, z: gz, s: gs, lean: (Math.random() - 0.5) * 0.3 });
+}
+envGroupB.add(grassInst);
+
+// Distant Treeline / Mountain Ring matching reference photo
+const mountainGeo = new THREE.PlaneGeometry(180, 26, 90, 12);
+const posAttr = mountainGeo.attributes.position;
+for (let i = 0; i < posAttr.count; i++) {
+  const vx = posAttr.getX(i);
+  const vy = posAttr.getY(i);
+  if (vy > -10) {
+    const n = Math.sin(vx * 0.12) * 2.2 + Math.cos(vx * 0.37) * 1.1 + Math.sin(vx * 0.8) * 0.4;
+    posAttr.setZ(i, n * ((vy + 13) / 26));
+    if (vy > 8) {
+      posAttr.setY(i, vy + n * 1.3);
+    }
+  }
+}
+mountainGeo.computeVertexNormals();
+const mountainMat = new THREE.MeshStandardMaterial({
+  color: 0x3b4d3e,
+  roughness: 0.92,
+  flatShading: true,
+  side: THREE.DoubleSide,
+});
+const mountainBackdrop = new THREE.Mesh(mountainGeo, mountainMat);
+mountainBackdrop.position.set(0, 5.5, -42);
+envGroupB.add(mountainBackdrop);
+
+// ============================================================================
+// BUILD ORGANIC BUCKSKIN HORSE ("CABALLO BAYO DE TU FOTO") IN THREE.JS
+// ============================================================================
+function buildHorseModel(style = 'buckskin_organic') {
+  const root = new THREE.Group();
+
+  // Palette based on style
+  const isFableBlocky = style === 'fable_blocky' || style === 'hydrogen_blocky';
+  const isCarbonGlossy = style === 'carbon_glossy';
+  const isAstraLowPoly = style === 'astra_lowpoly';
+
+  const coatColor = style === 'buckskin_organic' ? 0xc98a4b
+    : isCarbonGlossy ? 0xe07a38
+    : isAstraLowPoly ? 0xa86038
+    : 0x7a3a1e;
+
+  const darkPointColor = style === 'buckskin_organic' ? 0x1e1916 : 0x1a1310;
+  const hoofColor = 0x14110f;
+  const maneColor = 0x141210;
+
+  const coatMat = new THREE.MeshStandardMaterial({
+    color: coatColor,
+    roughness: isCarbonGlossy ? 0.24 : (isAstraLowPoly ? 0.55 : 0.46),
+    metalness: isCarbonGlossy ? 0.12 : 0.04,
+    flatShading: isAstraLowPoly || isFableBlocky,
+  });
+
+  const darkLegMat = new THREE.MeshStandardMaterial({
+    color: darkPointColor,
+    roughness: 0.55,
+    flatShading: isAstraLowPoly || isFableBlocky,
+  });
+
+  const hoofMat = new THREE.MeshStandardMaterial({
+    color: hoofColor,
+    roughness: 0.4,
+  });
+
+  const maneMat = new THREE.MeshStandardMaterial({
+    color: maneColor,
+    roughness: 0.65,
+    side: THREE.DoubleSide,
+  });
+
+  // Helper to create either organic sculpted limb/body or blocky cuboid
+  const segs = isAstraLowPoly ? 7 : 18;
+  function makePart(rTop, rBot, len, mat, isBoxOverride = false) {
+    let geo;
+    if (isFableBlocky || isBoxOverride) {
+      geo = new THREE.BoxGeometry(rTop * 1.85, len, rBot * 1.85);
+    } else {
+      geo = new THREE.CylinderGeometry(rTop, rBot, len, segs, 4);
+    }
+    const m = new THREE.Mesh(geo, mat);
+    m.castShadow = true;
+    m.receiveShadow = true;
+    return m;
+  }
+
+  function makeJointSphere(r, mat) {
+    if (isFableBlocky) {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(r * 1.6, r * 1.6, r * 1.6), mat);
+      m.castShadow = true;
+      return m;
+    }
+    const m = new THREE.Mesh(new THREE.SphereGeometry(r, segs, segs), mat);
+    m.castShadow = true;
+    return m;
+  }
+
+  // 1. PELVIS / TORSO GROUP (Bobs & pitches during gallop)
+  const bodyGroup = new THREE.Group();
+  bodyGroup.position.set(0, 1.52, 0);
+  root.add(bodyGroup);
+
+  // Chest (Pecho musculoso)
+  const chest = makeJointSphere(0.46, coatMat);
+  chest.scale.set(1.18, 1.06, 0.88);
+  chest.position.set(0.62, 0.04, 0);
+  bodyGroup.add(chest);
+
+  // Barrel / Ribcage (Tronco central)
+  const barrel = makePart(0.42, 0.45, 1.18, coatMat);
+  barrel.rotation.z = Math.PI / 2;
+  barrel.scale.set(1.0, 1.0, 0.86);
+  barrel.position.set(0.05, 0.05, 0);
+  bodyGroup.add(barrel);
+
+  // Croup / Haunches (Ancas / Grupa)
+  const croup = makeJointSphere(0.44, coatMat);
+  croup.scale.set(1.15, 1.05, 0.88);
+  croup.position.set(-0.58, 0.08, 0);
+  bodyGroup.add(croup);
+
+  // 2. NECK & HEAD PIVOT (Articulación de Cuello y Cabeza)
+  const neckPivot = new THREE.Group();
+  neckPivot.position.set(0.82, 0.22, 0);
+  bodyGroup.add(neckPivot);
+
+  const neckMesh = makePart(0.22, 0.36, 0.92, coatMat);
+  neckMesh.position.set(0.22, 0.36, 0);
+  neckMesh.rotation.z = -0.58;
+  neckPivot.add(neckMesh);
+
+  // Head Pivot
+  const headPivot = new THREE.Group();
+  headPivot.position.set(0.46, 0.74, 0);
+  neckPivot.add(headPivot);
+
+  // Upper Skull / Cheek
+  const skull = makeJointSphere(0.23, coatMat);
+  skull.scale.set(1.25, 0.95, 0.82);
+  headPivot.add(skull);
+
+  // Snout / Bridge of nose
+  const snout = makePart(0.13, 0.20, 0.48, coatMat);
+  snout.rotation.z = -1.18;
+  snout.position.set(0.26, -0.10, 0);
+  headPivot.add(snout);
+
+  // Dark Buckskin Muzzle (Hocico negro como en tu foto!)
+  const muzzle = makeJointSphere(0.135, darkLegMat);
+  muzzle.scale.set(1.15, 0.92, 0.88);
+  muzzle.position.set(0.47, -0.19, 0);
+  headPivot.add(muzzle);
+
+  // Nostrils & Eyes
+  const eyeMat = new THREE.MeshStandardMaterial({ color: 0x090807, roughness: 0.15 });
+  [-1, 1].forEach((side) => {
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.036, 10, 10), eyeMat);
+    eye.position.set(0.14, 0.06, side * 0.165);
+    headPivot.add(eye);
+
+    // Ears
+    const ear = makePart(0.015, 0.055, 0.19, darkLegMat);
+    ear.position.set(-0.04, 0.25, side * 0.11);
+    ear.rotation.z = -0.2;
+    ear.rotation.x = side * 0.22;
+    headPivot.add(ear);
+  });
+
+  // 3. FLOWING BLACK MANE RIBBONS (Crines negras ondeando al viento como en la foto!)
+  const maneStrands = [];
+  const maneCount = isFableBlocky ? 10 : 34;
+  for (let i = 0; i < maneCount; i++) {
+    const t = i / maneCount;
+    const strandPivot = new THREE.Group();
+    strandPivot.position.set(
+      0.42 - t * 0.44,
+      0.78 - t * 0.58,
+      (i % 2 === 0 ? 1 : -1) * (0.04 + (i % 3) * 0.03)
+    );
+    const len = 0.38 + Math.sin(t * Math.PI) * 0.28 + (i % 4) * 0.06;
+    const strandGeo = isFableBlocky
+      ? new THREE.BoxGeometry(len, 0.045, 0.045)
+      : new THREE.ConeGeometry(0.042, len, 5);
+    if (!isFableBlocky) {
+      strandGeo.rotateZ(Math.PI / 2);
+      strandGeo.translate(-len * 0.45, 0, 0);
+    } else {
+      strandGeo.translate(-len * 0.45, 0, 0);
+    }
+    const strandMesh = new THREE.Mesh(strandGeo, maneMat);
+    strandPivot.add(strandMesh);
+    neckPivot.add(strandPivot);
+    maneStrands.push({
+      pivot: strandPivot,
+      baseRotZ: 0.25 + t * 0.35,
+      baseRotY: (i % 2 === 0 ? 1 : -1) * (0.18 + (i % 5) * 0.06),
+      phase: i * 0.45,
+    });
+  }
+
+  // 4. FLOWING BLACK TAIL (Cola negra dinámica)
+  const tailPivot = new THREE.Group();
+  tailPivot.position.set(-0.92, 0.16, 0);
+  bodyGroup.add(tailPivot);
+
+  const tailStrands = [];
+  const tailCount = isFableBlocky ? 8 : 28;
+  for (let i = 0; i < tailCount; i++) {
+    const sp = new THREE.Group();
+    const len = 0.75 + (i % 5) * 0.14;
+    const tGeo = isFableBlocky
+      ? new THREE.BoxGeometry(len, 0.06, 0.06)
+      : new THREE.ConeGeometry(0.055, len, 6);
+    if (!isFableBlocky) {
+      tGeo.rotateZ(Math.PI / 2);
+    }
+    tGeo.translate(-len * 0.48, 0, 0);
+    const tm = new THREE.Mesh(tGeo, maneMat);
+    sp.add(tm);
+    sp.rotation.y = ((i / tailCount) - 0.5) * 0.45;
+    sp.rotation.z = 0.35 + ((i % 4) - 1.5) * 0.09;
+    tailPivot.add(sp);
+    tailStrands.push({ pivot: sp, baseZ: sp.rotation.z, phase: i * 0.38 });
+  }
+
+  // 5. FOUR 3-SEGMENT ARTICULATED LEGS (Muslo -> Caña Negra -> Pezuña)
+  // Notice the black stockings (cabos negros) on the lower legs matching the buckskin photo!
+  function buildLeg(isFront, sideZ) {
+    const hipPivot = new THREE.Group();
+    hipPivot.position.set(isFront ? 0.66 : -0.64, -0.12, sideZ);
+    bodyGroup.add(hipPivot);
+
+    const upperLen = isFront ? 0.56 : 0.62;
+    const upperRTop = isFront ? 0.17 : 0.21;
+    const upperRBot = 0.115;
+
+    const upperMesh = makePart(upperRTop, upperRBot, upperLen, coatMat);
+    upperMesh.position.set(0, -upperLen * 0.5, 0);
+    hipPivot.add(upperMesh);
+
+    const kneeJoint = makeJointSphere(0.115, darkLegMat);
+    kneeJoint.position.set(0, -upperLen, 0);
+    hipPivot.add(kneeJoint);
+
+    // Knee / Hock Pivot (Caña negra del caballo bayo)
+    const kneePivot = new THREE.Group();
+    kneePivot.position.set(0, -upperLen, 0);
+    hipPivot.add(kneePivot);
+
+    const lowerLen = isFront ? 0.52 : 0.54;
+    const lowerMesh = makePart(0.105, 0.075, lowerLen, darkLegMat);
+    lowerMesh.position.set(0, -lowerLen * 0.5, 0);
+    kneePivot.add(lowerMesh);
+
+    const fetlockJoint = makeJointSphere(0.08, darkLegMat);
+    fetlockJoint.position.set(0, -lowerLen, 0);
+    kneePivot.add(fetlockJoint);
+
+    // Fetlock / Hoof Pivot (Cuartilla y Casco)
+    const hoofPivot = new THREE.Group();
+    hoofPivot.position.set(0, -lowerLen, 0);
+    kneePivot.add(hoofPivot);
+
+    const pasternLen = 0.22;
+    const pasternMesh = makePart(0.072, 0.095, pasternLen, hoofMat);
+    pasternMesh.position.set(0.03, -pasternLen * 0.5, 0);
+    pasternMesh.rotation.z = 0.25;
+    hoofPivot.add(pasternMesh);
+
+    return { hipPivot, kneePivot, hoofPivot, isFront };
+  }
+
+  const legs = {
+    FL: buildLeg(true, 0.24),   // Front Left
+    FR: buildLeg(true, -0.24),  // Front Right
+    BL: buildLeg(false, 0.25),  // Back Left
+    BR: buildLeg(false, -0.25), // Back Right
+  };
+
+  // 6. DEBUG SKELETON / RIGGING VISUALIZER (Green Bones & Joint Spheres)
+  const rigDebugGroup = new THREE.Group();
+  rigDebugGroup.visible = false;
+  root.add(rigDebugGroup);
+
+  const boneLineMat = new THREE.LineBasicMaterial({ color: 0x4ade80, depthTest: false, transparent: true, opacity: 0.95 });
+  const boneDotGeo = new THREE.SphereGeometry(0.055, 8, 8);
+  const boneDotMat = new THREE.MeshBasicMaterial({ color: 0x22d3ee, depthTest: false });
+
+  const rigJointDots = [];
+  for (let i = 0; i < 16; i++) {
+    const dot = new THREE.Mesh(boneDotGeo, boneDotMat);
+    dot.renderOrder = 999;
+    rigDebugGroup.add(dot);
+    rigJointDots.push(dot);
+  }
+  const rigLineGeo = new THREE.BufferGeometry();
+  rigLineGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(36 * 3), 3));
+  const rigLines = new THREE.LineSegments(rigLineGeo, boneLineMat);
+  rigLines.renderOrder = 998;
+  rigDebugGroup.add(rigLines);
+
+  return {
+    root,
+    bodyGroup,
+    neckPivot,
+    headPivot,
+    tailPivot,
+    maneStrands,
+    tailStrands,
+    legs,
+    rigDebugGroup,
+    rigJointDots,
+    rigLines,
+  };
+}
+
+const horseB = buildHorseModel('buckskin_organic');
+sceneB.add(horseB.root);
+
+// Footstep Dirt / Water Splash Particles in Scene B
+const splashCount = 120;
+const splashGeo = new THREE.SphereGeometry(0.06, 6, 6);
+const splashMat = new THREE.MeshStandardMaterial({ color: 0x4d3b28, roughness: 0.7 });
+const splashInst = new THREE.InstancedMesh(splashGeo, splashMat, splashCount);
+sceneB.add(splashInst);
+
+const splashParticles = [];
+for (let i = 0; i < splashCount; i++) {
+  splashParticles.push({
+    x: 0, y: -10, z: 0,
+    vx: 0, vy: 0, vz: 0,
+    life: 0, s: 1,
+  });
+}
+let splashCursor = 0;
+
+function spawnHoofParticles(wx, wz, isWater) {
+  for (let k = 0; k < 4; k++) {
+    const p = splashParticles[splashCursor];
+    splashCursor = (splashCursor + 1) % splashCount;
+    p.x = wx + (Math.random() - 0.5) * 0.18;
+    p.y = 0.04;
+    p.z = wz + (Math.random() - 0.5) * 0.18;
+    p.vx = -2.8 - Math.random() * 2.4;
+    p.vy = 1.4 + Math.random() * (isWater ? 2.4 : 1.6);
+    p.vz = (Math.random() - 0.5) * 1.4;
+    p.life = 1.0;
+    p.s = 0.5 + Math.random() * 0.9;
+  }
+}
+
+// ============================================================================
+// BIOMECHANICAL GALLOP ANIMATOR (SHARED ACROSS ALL 3D HORSES)
+// ============================================================================
+function updateHorseGallop(horse, t, dt, emitParticles = false) {
+  // Rotary / Transverse Gallop Phase Offsets (4-beat authentic equine cadence)
+  const freq = 7.8;
+  const phase = t * freq;
+
+  // Body suspension & pitch
+  const suspension = Math.sin(phase);
+  horse.bodyGroup.position.y = 1.48 + suspension * 0.11;
+  horse.bodyGroup.rotation.z = Math.cos(phase) * 0.095;
+
+  // Neck & Head counter-balance bob
+  horse.neckPivot.rotation.z = Math.sin(phase - 0.7) * 0.12;
+  horse.headPivot.rotation.z = Math.cos(phase - 0.4) * 0.10;
+
+  // Tail wave
+  horse.tailPivot.rotation.z = 0.18 + Math.sin(phase - 1.1) * 0.16;
+  for (const ts of horse.tailStrands) {
+    ts.pivot.rotation.z = ts.baseZ + Math.sin(phase * 1.4 + ts.phase) * 0.18;
+  }
+
+  // Flowing Mane Strands
+  for (const ms of horse.maneStrands) {
+    ms.pivot.rotation.z = ms.baseRotZ + Math.sin(phase * 1.5 + ms.phase) * 0.22;
+    ms.pivot.rotation.y = ms.baseRotY + Math.cos(phase * 1.2 + ms.phase) * 0.14;
+  }
+
+  // 4-Beat Gallop Leg Phases:
+  // Back Right (0.0) -> Back Left (0.85) -> Front Right (2.35) -> Front Left (3.20)
+  const legPhases = {
+    BR: phase + 0.0,
+    BL: phase + 0.85,
+    FR: phase + 2.35,
+    FL: phase + 3.20,
+  };
+
+  for (const [key, leg] of Object.entries(horse.legs)) {
+    const lp = legPhases[key];
+    const swing = Math.sin(lp);
+    const lift = Math.max(0, Math.cos(lp));
+
+    if (leg.isFront) {
+      // Forelimb kinematics: shoulder sweeps wide, knee flexes strongly backward during aerial recovery
+      leg.hipPivot.rotation.z = swing * 0.68 + 0.08;
+      leg.kneePivot.rotation.z = -lift * 1.22 - 0.08;
+      leg.hoofPivot.rotation.z = Math.sin(lp + 0.6) * 0.42 - lift * 0.35;
+    } else {
+      // Hindlimb kinematics: powerful hip drive, hock flexes forward/up
+      leg.hipPivot.rotation.z = swing * 0.64 - 0.14;
+      leg.kneePivot.rotation.z = lift * 1.05 + 0.18;
+      leg.hoofPivot.rotation.z = -lift * 0.65 + Math.cos(lp) * 0.25;
+    }
+
+    // Emit dirt/water splash when hoof strikes ground (swing passing near bottom)
+    if (emitParticles && Math.abs(swing + 0.35) < 0.15 && Math.cos(lp) < -0.5) {
+      const v = new THREE.Vector3();
+      leg.hoofPivot.getWorldPosition(v);
+      spawnHoofParticles(v.x, v.z, envStyle === 'canyon');
+    }
+  }
+
+  // Update Debug Skeleton visualization if enabled
+  horse.rigDebugGroup.visible = showRigDebug;
+  if (showRigDebug) {
+    const pts = [];
+    const getW = (obj) => {
+      const v = new THREE.Vector3();
+      obj.getWorldPosition(v);
+      horse.root.worldToLocal(v);
+      return v;
+    };
+    const pBody = getW(horse.bodyGroup);
+    const pNeck = getW(horse.neckPivot);
+    const pHead = getW(horse.headPivot);
+    const pTail = getW(horse.tailPivot);
+
+    const joints = [pBody, pNeck, pHead, pTail];
+    const segments = [
+      [pBody, pNeck],
+      [pNeck, pHead],
+      [pBody, pTail],
+    ];
+
+    for (const leg of Object.values(horse.legs)) {
+      const pHip = getW(leg.hipPivot);
+      const pKnee = getW(leg.kneePivot);
+      const pHoof = getW(leg.hoofPivot);
+      joints.push(pHip, pKnee, pHoof);
+      segments.push([pBody, pHip], [pHip, pKnee], [pKnee, pHoof]);
+    }
+
+    joints.forEach((pt, idx) => {
+      if (horse.rigJointDots[idx]) horse.rigJointDots[idx].position.copy(pt);
+    });
+
+    const arr = horse.rigLines.geometry.attributes.position.array;
+    let ptr = 0;
+    for (const [a, b] of segments) {
+      arr[ptr++] = a.x; arr[ptr++] = a.y; arr[ptr++] = a.z;
+      arr[ptr++] = b.x; arr[ptr++] = b.y; arr[ptr++] = b.z;
+    }
+    horse.rigLines.geometry.attributes.position.needsUpdate = true;
+  }
+}
+
+// ============================================================================
+// QUAD ARENA COMPARISON SCENES (FABLE 5.2 vs CARBON vs ASTRA vs HYDROGEN)
+// ============================================================================
+const quadScenes = [];
+function initQuadComparison() {
+  const configs = [
+    {
+      name: 'Fable 5.2',
+      style: 'fable_blocky',
+      skyTop: '#b97e5a', skyBot: '#d9a888',
+      groundCol: 0x998577,
+      mountainCol: 0x8c5c44,
+      camPos: [0.8, 1.5, 4.9],
+    },
+    {
+      name: 'Gemini 4 Carbon',
+      style: 'carbon_glossy',
+      skyTop: '#8f3b1b', skyBot: '#e39652',
+      groundCol: 0xaa8656,
+      mountainCol: 0x9e4720,
+      camPos: [0.5, 1.45, 4.8],
+    },
+    {
+      name: 'Gpt-6 Astra',
+      style: 'astra_lowpoly',
+      skyTop: '#c4cdd4', skyBot: '#e8dec8',
+      groundCol: 0x7b9882,
+      mountainCol: 0x8d999e,
+      camPos: [2.2, 1.55, 3.8],
+    },
+    {
+      name: 'Gemini 4 Hydrogen',
+      style: 'hydrogen_blocky',
+      skyTop: '#6b3844', skyBot: '#c77c57',
+      groundCol: 0x262421,
+      mountainCol: 0x804c36,
+      camPos: [0.6, 1.35, 4.7],
+    },
+  ];
+
+  for (const cfg of configs) {
+    const sc = new THREE.Scene();
+    const c = document.createElement('canvas');
+    c.width = 128; c.height = 256;
+    const g = c.getContext('2d');
+    const grd = g.createLinearGradient(0, 0, 0, 256);
+    grd.addColorStop(0, cfg.skyTop);
+    grd.addColorStop(1, cfg.skyBot);
+    g.fillStyle = grd;
+    g.fillRect(0, 0, 128, 256);
+    sc.background = new THREE.CanvasTexture(c);
+
+    sc.add(new THREE.HemisphereLight(0xfff1e0, 0x3b2d23, 0.85));
+    const dl = new THREE.DirectionalLight(0xffe7c4, 1.25);
+    dl.position.set(6, 10, 7);
+    sc.add(dl);
+
+    const floor = new THREE.Mesh(
+      new THREE.PlaneGeometry(80, 80),
+      new THREE.MeshStandardMaterial({ color: cfg.groundCol, roughness: 0.45 })
+    );
+    floor.rotation.x = -Math.PI / 2;
+    sc.add(floor);
+
+    const mGeo = mountainGeo.clone();
+    const mMesh = new THREE.Mesh(
+      mGeo,
+      new THREE.MeshStandardMaterial({ color: cfg.mountainCol, flatShading: true })
+    );
+    mMesh.position.set(0, 4.5, -24);
+    sc.add(mMesh);
+
+    const h = buildHorseModel(cfg.style);
+    sc.add(h.root);
+
+    const cam = new THREE.PerspectiveCamera(40, 1, 0.1, 120);
+    cam.position.set(...cfg.camPos);
+    cam.lookAt(0, 1.35, 0);
+
+    quadScenes.push({ scene: sc, camera: cam, horse: h, mountains: mMesh });
+  }
+}
+initQuadComparison();
+
+// ============================================================================
+// CAMINO A: 2.5D PHOTOGRAPHIC PUPPET + SKELETAL MESH WARP ENGINE
+// ============================================================================
+let customUploadedPhoto = null;
+document.getElementById('btn-photo')?.addEventListener('click', () => {
+  document.getElementById('file-input')?.click();
+});
+document.getElementById('file-input')?.addEventListener('change', (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const img = new Image();
+    img.onload = () => {
+      customUploadedPhoto = img;
+      showToast('📸 ¡Foto de caballo aplicada a la Marioneta 2.5D!');
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+function renderCaminoA25D(w, h, t) {
+  canvas2D.width = w;
+  canvas2D.height = h;
+  const ctx = ctx2D;
+
+  // 1. Sky (Day Meadow / Sunset Canyon / Starry Night)
+  const skyGrad = ctx.createLinearGradient(0, 0, 0, h * 0.56);
+  if (envStyle === 'meadow') {
+    skyGrad.addColorStop(0.0, '#c8d6e3');
+    skyGrad.addColorStop(0.65, '#e2e9f0');
+    skyGrad.addColorStop(1.0, '#f2f5f7');
+  } else if (envStyle === 'canyon') {
+    skyGrad.addColorStop(0.0, '#78351e');
+    skyGrad.addColorStop(0.55, '#cf7543');
+    skyGrad.addColorStop(1.0, '#f4b375');
+  } else {
+    skyGrad.addColorStop(0.0, '#070b19');
+    skyGrad.addColorStop(0.60, '#111c38');
+    skyGrad.addColorStop(1.0, '#1d2d4f');
+  }
+  ctx.fillStyle = skyGrad;
+  ctx.fillRect(0, 0, w, h * 0.56);
+
+  if (envStyle === 'night') {
+    // Twinkling stars & Full Moon
+    ctx.fillStyle = '#ffffff';
+    for (let s = 0; s < 90; s++) {
+      const sx = (s * 137) % w;
+      const sy = (s * 61) % (h * 0.48);
+      ctx.fillRect(sx, sy, (s % 3 === 0) ? 2.5 : 1.5, (s % 3 === 0) ? 2.5 : 1.5);
+    }
+    ctx.fillStyle = '#fef9c3';
+    ctx.beginPath();
+    ctx.arc(w * 0.82, h * 0.16, 36, 0, Math.PI * 2);
+    ctx.fill();
+  } else {
+    // Soft moving clouds
+    ctx.fillStyle = envStyle === 'canyon' ? 'rgba(255,215,170,0.35)' : 'rgba(255,255,255,0.55)';
+    for (let i = 0; i < 6; i++) {
+      const cx = ((w * 1.4 - ((t * 25 + i * 280) % (w * 1.4)))) - w * 0.2;
+      const cy = h * (0.12 + (i % 3) * 0.09);
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, 130, 34, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // 2. Distant Dark Green Forest Horizon Line (Parallax Layer 1)
+  const horizonY = h * 0.54;
+  ctx.fillStyle = envStyle === 'meadow' ? '#3b4d3e' : (envStyle === 'canyon' ? '#5c311b' : '#0b1412');
+  ctx.beginPath();
+  ctx.moveTo(0, horizonY + 20);
+  for (let x = 0; x <= w; x += 18) {
+    const worldX = x + t * 85;
+    const treeH = 26 + Math.sin(worldX * 0.025) * 9 + Math.cos(worldX * 0.08) * 5;
+    ctx.lineTo(x, horizonY - treeH);
+  }
+  ctx.lineTo(w, horizonY + 20);
+  ctx.closePath();
+  ctx.fill();
+
+  // 3. Multi-Layer Parallax Green Meadow (Day / Sunset / Night)
+  const meadowGrad = ctx.createLinearGradient(0, horizonY, 0, h);
+  if (envStyle === 'meadow') {
+    meadowGrad.addColorStop(0.0, '#7c9949');
+    meadowGrad.addColorStop(0.35, '#688738');
+    meadowGrad.addColorStop(1.0, '#44631e');
+  } else if (envStyle === 'canyon') {
+    meadowGrad.addColorStop(0.0, '#b08455');
+    meadowGrad.addColorStop(0.35, '#966c40');
+    meadowGrad.addColorStop(1.0, '#6b4a28');
+  } else {
+    meadowGrad.addColorStop(0.0, '#1d3625');
+    meadowGrad.addColorStop(0.35, '#15291c');
+    meadowGrad.addColorStop(1.0, '#0c1a11');
+  }
+  ctx.fillStyle = meadowGrad;
+  ctx.fillRect(0, horizonY, w, h - horizonY);
+
+  // Parallax grass streaks rushing past
+  for (let layer = 0; layer < 3; layer++) {
+    const speed = (220 + layer * 240) * gallopSpeed;
+    const yBase = horizonY + 25 + layer * ((h - horizonY - 40) / 3);
+    if (envStyle === 'meadow') {
+      ctx.fillStyle = layer === 0 ? '#5c7a2f' : (layer === 1 ? '#4f6e24' : '#3a5417');
+    } else if (envStyle === 'canyon') {
+      ctx.fillStyle = layer === 0 ? '#cfa87a' : (layer === 1 ? '#805b34' : '#593d20');
+    } else {
+      ctx.fillStyle = layer === 0 ? '#274731' : (layer === 1 ? '#1a3322' : '#0f2115');
+    }
+    for (let i = 0; i < 28; i++) {
+      const gx = w - (((t * speed + i * (w / 14)) % (w + 160))) + 80;
+      const gy = yBase + (i % 5) * 18;
+      ctx.fillRect(gx, gy, 45 + layer * 25, 3 + layer * 1.5);
+    }
+  }
+
+  // 4. 2.5D RIGGED PHOTOGRAPHIC BUCKSKIN HORSE PUPPET
+  const cx = w * 0.48;
+  const cy = h * 0.50;
+  const scale = Math.min(w, h) / 680;
+
+  const phase = t * 7.8;
+  const bobY = Math.sin(phase) * 16 * scale;
+  const pitch = Math.cos(phase) * 0.08;
+
+  ctx.save();
+  ctx.translate(cx, cy + bobY);
+  ctx.scale(scale, scale);
+  ctx.rotate(pitch);
+
+  // Ground shadow under horse
+  ctx.save();
+  ctx.rotate(-pitch);
+  ctx.fillStyle = 'rgba(25, 38, 12, 0.36)';
+  ctx.beginPath();
+  ctx.ellipse(0, 215 - bobY / scale, 175 - Math.sin(phase) * 18, 24, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  // Helper to draw a shaded 2.5D anatomical limb segment with Buckskin-to-Black gradient
+  const rigJoints2D = [];
+  const rigBones2D = [];
+
+  function draw25DLeg(hipX, hipY, phaseOffset, isFront, isFarSide) {
+    const lp = phase + phaseOffset;
+    const swing = Math.sin(lp);
+    const lift = Math.max(0, Math.cos(lp));
+
+    const thighAngle = isFront ? (swing * 0.65 - 0.15) : (swing * 0.60 + 0.1);
+    const kneeAngle = isFront ? (lift * 1.18 + 0.12) : (-lift * 0.95 - 0.22);
+    const hoofAngle = isFront ? (lift * 0.45) : (-lift * 0.4);
+
+    const l1 = isFront ? 92 : 98;
+    const l2 = isFront ? 84 : 88;
+    const l3 = 34;
+
+    const kneeX = hipX + Math.sin(thighAngle) * l1;
+    const kneeY = hipY + Math.cos(thighAngle) * l1;
+
+    const totKnee = thighAngle - kneeAngle;
+    const ankleX = kneeX + Math.sin(totKnee) * l2;
+    const ankleY = kneeY + Math.cos(totKnee) * l2;
+
+    const totHoof = totKnee - hoofAngle + 0.25;
+    const toeX = ankleX + Math.sin(totHoof) * l3;
+    const toeY = ankleY + Math.cos(totHoof) * l3;
+
+    // Upper thigh (Golden Buckskin coat)
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = isFarSide ? '#96612e' : '#c98b49';
+    ctx.lineWidth = isFront ? 36 : 44;
+    ctx.beginPath();
+    ctx.moveTo(hipX, hipY);
+    ctx.lineTo(kneeX, kneeY);
+    ctx.stroke();
+
+    // Lower cannon bone (Black stocking gradient matching the buckskin photo!)
+    const legGrad = ctx.createLinearGradient(kneeX, kneeY, ankleX, ankleY);
+    legGrad.addColorStop(0.0, isFarSide ? '#4a321d' : '#734d29');
+    legGrad.addColorStop(0.35, '#241e1b');
+    legGrad.addColorStop(1.0, '#14110f');
+    ctx.strokeStyle = legGrad;
+    ctx.lineWidth = 22;
+    ctx.beginPath();
+    ctx.moveTo(kneeX, kneeY);
+    ctx.lineTo(ankleX, ankleY);
+    ctx.stroke();
+
+    // Hoof
+    ctx.strokeStyle = '#1c1815';
+    ctx.lineWidth = 24;
+    ctx.beginPath();
+    ctx.moveTo(ankleX, ankleY);
+    ctx.lineTo(toeX, toeY);
+    ctx.stroke();
+
+    rigJoints2D.push([hipX, hipY], [kneeX, kneeY], [ankleX, ankleY], [toeX, toeY]);
+    rigBones2D.push([[hipX, hipY], [kneeX, kneeY]], [[kneeX, kneeY], [ankleX, ankleY]], [[ankleX, ankleY], [toeX, toeY]]);
+  }
+
+  // Far-side legs first (depth sorting)
+  draw25DLeg(-75, 42, 0.85, false, true);
+  draw25DLeg(95, 38, 3.20, true, true);
+
+  // Flowing Black Tail Strands (22 dynamic Bezier curves waving in the wind)
+  const tailRootX = -155, tailRootY = -30;
+  for (let i = 0; i < 22; i++) {
+    const wave1 = Math.sin(phase * 1.3 + i * 0.35) * 24;
+    const wave2 = Math.cos(phase * 1.1 + i * 0.5) * 38;
+    ctx.strokeStyle = i % 3 === 0 ? '#0f0d0c' : '#211c19';
+    ctx.lineWidth = 4.5 - (i % 3);
+    ctx.beginPath();
+    ctx.moveTo(tailRootX, tailRootY + (i - 11) * 1.4);
+    ctx.bezierCurveTo(
+      tailRootX - 75, tailRootY - 25 + (i - 11) * 4 + wave1 * 0.5,
+      tailRootX - 135, tailRootY + 45 + (i - 11) * 6 + wave1,
+      tailRootX - 175 - (i % 4) * 16, tailRootY + 115 + (i - 11) * 5 + wave2
+    );
+    ctx.stroke();
+  }
+
+  // Muscular Buckskin Torso, Chest & Haunches (Photorealistic radial gradients matching photo lighting)
+  const bodyGrad = ctx.createRadialGradient(20, -35, 20, 0, 0, 195);
+  bodyGrad.addColorStop(0.0, '#e8ae6b');
+  bodyGrad.addColorStop(0.55, '#c98a48');
+  bodyGrad.addColorStop(0.88, '#9e662e');
+  bodyGrad.addColorStop(1.0, '#784b1e');
+
+  ctx.fillStyle = bodyGrad;
+  // Haunch / Croup
+  ctx.beginPath();
+  ctx.ellipse(-78, -8, 86, 72, -0.15, 0, Math.PI * 2);
+  ctx.fill();
+  // Barrel
+  ctx.beginPath();
+  ctx.ellipse(8, 2, 108, 68, -0.05, 0, Math.PI * 2);
+  ctx.fill();
+  // Muscular Chest (with subtle pectoral crease from photo)
+  ctx.beginPath();
+  ctx.ellipse(96, -2, 74, 68, 0.25, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Neck & Head Articulation
+  const neckAng = Math.sin(phase - 0.6) * 0.09;
+  ctx.save();
+  ctx.translate(105, -35);
+  ctx.rotate(neckAng);
+
+  // Flowing Black Mane behind/along neck (24 wind-blown locks matching the buckskin photo!)
+  for (let i = 0; i < 24; i++) {
+    const ny = -145 + i * 6.2;
+    const nx = 18 - i * 1.2;
+    const wv = Math.sin(phase * 1.6 + i * 0.4) * 22;
+    ctx.strokeStyle = i % 2 === 0 ? '#12100e' : '#26201d';
+    ctx.lineWidth = 4.2;
+    ctx.beginPath();
+    ctx.moveTo(nx, ny);
+    ctx.quadraticCurveTo(nx - 68, ny - 22 + wv * 0.6, nx - 135 - (i % 5) * 14, ny + 8 + wv);
+    ctx.stroke();
+  }
+
+  // Sculpted Golden Neck
+  const neckGrad = ctx.createLinearGradient(-30, -120, 60, 20);
+  neckGrad.addColorStop(0.0, '#dca15d');
+  neckGrad.addColorStop(0.6, '#c48441');
+  neckGrad.addColorStop(1.0, '#965f28');
+  ctx.fillStyle = neckGrad;
+  ctx.beginPath();
+  ctx.moveTo(-36, 15);
+  ctx.quadraticCurveTo(-15, -95, 16, -155);
+  ctx.lineTo(66, -135);
+  ctx.quadraticCurveTo(68, -45, 45, 30);
+  ctx.closePath();
+  ctx.fill();
+
+  // Horse Head (Three-Quarter Turn like the reference photo!)
+  const headX = 36, headY = -148;
+  // Ears
+  ctx.fillStyle = '#855324';
+  ctx.beginPath();
+  ctx.ellipse(headX - 18, headY - 34, 9, 24, -0.25, 0, Math.PI * 2);
+  ctx.ellipse(headX + 14, headY - 36, 9, 24, 0.18, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Forelock (mechón negro entre las orejas)
+  ctx.strokeStyle = '#14110f';
+  ctx.lineWidth = 4;
+  for (let k = 0; k < 6; k++) {
+    ctx.beginPath();
+    ctx.moveTo(headX - 2, headY - 30);
+    ctx.quadraticCurveTo(headX - 25 - k * 5, headY - 45 + Math.sin(phase + k) * 8, headX - 55 - k * 6, headY - 22);
+    ctx.stroke();
+  }
+
+  // Head & Bridge of Nose
+  ctx.fillStyle = '#d89d5b';
+  ctx.beginPath();
+  ctx.moveTo(headX - 26, headY - 18);
+  ctx.lineTo(headX + 26, headY - 16);
+  ctx.lineTo(headX + 8, headY + 68);
+  ctx.lineTo(headX - 34, headY + 62);
+  ctx.closePath();
+  ctx.fill();
+
+  // Dark Buckskin Muzzle & Nostrils
+  const muzGrad = ctx.createRadialGradient(headX - 14, headY + 65, 4, headX - 14, headY + 65, 32);
+  muzGrad.addColorStop(0.0, '#1c1816');
+  muzGrad.addColorStop(0.7, '#382e28');
+  muzGrad.addColorStop(1.0, 'rgba(201,138,72,0)');
+  ctx.fillStyle = muzGrad;
+  ctx.beginPath();
+  ctx.arc(headX - 13, headY + 62, 28, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Expressive Dark Eyes
+  ctx.fillStyle = '#120f0d';
+  ctx.beginPath();
+  ctx.arc(headX - 22, headY + 4, 5.5, 0, Math.PI * 2);
+  ctx.arc(headX + 14, headY + 6, 5.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(headX - 24, headY + 2, 2, 2);
+  ctx.fillRect(headX + 12, headY + 4, 2, 2);
+
+  ctx.restore(); // end neck/head
+
+  // Near-side legs (Front & Back)
+  draw25DLeg(-55, 44, 0.0, false, false);
+  draw25DLeg(112, 40, 2.35, true, false);
+
+  // If user uploaded a custom photo, show Picture-in-Picture Reference + Deformable Mesh Grid
+  if (showRigDebug) {
+    // Draw Deformable Triangular Warp Cage & Green Bones over the 2.5D Puppet!
+    ctx.strokeStyle = 'rgba(74, 222, 128, 0.85)';
+    ctx.lineWidth = 2.5;
+    for (const [a, b] of rigBones2D) {
+      ctx.beginPath();
+      ctx.moveTo(a[0], a[1]);
+      ctx.lineTo(b[0], b[1]);
+      ctx.stroke();
+    }
+    // Spine bone
+    ctx.beginPath();
+    ctx.moveTo(-145, -25);
+    ctx.lineTo(-65, -5);
+    ctx.lineTo(95, -5);
+    ctx.lineTo(135, -175);
+    ctx.stroke();
+
+    for (const [jx, jy] of [...rigJoints2D, [-145, -25], [-65, -5], [95, -5], [135, -175]]) {
+      ctx.fillStyle = '#22d3ee';
+      ctx.beginPath();
+      ctx.arc(jx, jy, 6.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  ctx.restore();
+}
+
+// ============================================================================
+// UI EVENT HANDLERS & RECORDING (10 SECONDS VIDEO)
+// ============================================================================
+document.querySelectorAll('.tab-btn').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentMode = btn.dataset.mode;
+
+    quadLabels.style.display = currentMode === 'quad' ? 'block' : 'none';
+    btnPhoto.style.display = currentMode === 'caminoA' ? 'inline-flex' : 'none';
+    btnEnv.style.display = currentMode !== 'quad' ? 'inline-flex' : 'none';
+    controlsB.enabled = currentMode === 'caminoB';
+
+    if (currentMode === 'caminoA') {
+      hudTitle.textContent = '🖼️ Camino A: Marioneta Fotográfica 2.5D (Skeletal Photo Rigging)';
+      hudDesc.innerHTML = 'Divide el caballo bayo en <b>16 piezas anatómicas</b> (cabeza, cuello, pecho, ancas, 12 tramos de patas con cabos negros y 46 hebras de crin/cola al viento) sobre una pradera en capas parallax. Pulsa <b>🦴 Ver Esqueleto</b> o cambia entre <b>Día / Atardecer / Noche</b>.';
+    } else if (currentMode === 'caminoB') {
+      hudTitle.textContent = '🐎 Camino B: Escultura 3D Orgánica (Three.js 360° en Tiempo Real)';
+      hudDesc.innerHTML = 'Reconstrucción 3D de 360° con los colores de tu foto (bayo dorado con hocico, crin y cañas negras). <b>Arrastra con el mouse o dedo para rodear al caballo en 360° mientras galopa y cambia Día/Atardecer/Noche.</b>';
+    } else {
+      hudTitle.textContent = '⚔️ Comparativa en Vivo: Fable 5.2 vs Carbon vs Astra vs Hydrogen';
+      hudDesc.innerHTML = 'Los 4 estilos del post viral de X corriendo al mismo tiempo en tu navegador: <b>Fable 5.2</b> (bloques), <b>Gemini 4 Carbon</b> (cápsulas brillantes), <b>Gpt-6 Astra</b> (low-poly facetado) y <b>Hydrogen</b>.';
+    }
+  });
+});
+
+btnRig.addEventListener('click', () => {
+  showRigDebug = !showRigDebug;
+  btnRig.classList.toggle('rig-active', showRigDebug);
+  showToast(showRigDebug ? '🦴 Esqueleto y articulaciones visibles' : '🦴 Esqueleto oculto');
+});
+
+btnEnv.addEventListener('click', () => {
+  envStyle = envStyle === 'meadow' ? 'canyon' : (envStyle === 'canyon' ? 'night' : 'meadow');
+  if (envStyle === 'meadow') {
+    sceneB.background = skyTexMeadow;
+    sceneB.fog.color.setHex(0xd8e2ea);
+    groundMatB.map = groundTexMeadow;
+    mountainMat.color.setHex(0x3b4d3e);
+    grassMat.color.setHex(0x6c8f38);
+    splashMat.color.setHex(0x4d3b28);
+    sunLightB.color.setHex(0xfff5e4);
+    sunLightB.intensity = 1.35;
+    hemiLightB.intensity = 0.85;
+    btnEnv.textContent = '☀️ Escenario: Día Pradera';
+  } else if (envStyle === 'canyon') {
+    sceneB.background = skyTexCanyon;
+    sceneB.fog.color.setHex(0xc98053);
+    groundMatB.map = groundTexCanyon;
+    mountainMat.color.setHex(0x944825);
+    grassMat.color.setHex(0xb08455);
+    splashMat.color.setHex(0xf5f9ff);
+    sunLightB.color.setHex(0xffb870);
+    sunLightB.intensity = 1.45;
+    hemiLightB.intensity = 0.75;
+    btnEnv.textContent = '🌅 Escenario: Atardecer Dorado';
+  } else {
+    sceneB.background = skyTexNight;
+    sceneB.fog.color.setHex(0x0f1a2e);
+    groundMatB.map = groundTexNight;
+    mountainMat.color.setHex(0x0d171c);
+    grassMat.color.setHex(0x1f3d28);
+    splashMat.color.setHex(0x93c5fd);
+    sunLightB.color.setHex(0x93c5fd);
+    sunLightB.intensity = 0.90;
+    hemiLightB.intensity = 0.45;
+    btnEnv.textContent = '🌙 Escenario: Noche Estrellada';
+  }
+  groundMatB.needsUpdate = true;
+});
+
+const speedSlider = document.getElementById('speed-slider');
+const speedVal = document.getElementById('speed-val');
+speedSlider.addEventListener('input', (e) => {
+  gallopSpeed = parseFloat(e.target.value);
+  speedVal.textContent = gallopSpeed.toFixed(2) + 'x';
+});
+
+// 10-Second Video Recorder
+let mediaRecorder = null;
+let recChunks = [];
+let isRecording = false;
+const btnRecord = document.getElementById('btn-record');
+
+btnRecord.addEventListener('click', () => {
+  if (isRecording && mediaRecorder) {
+    mediaRecorder.stop();
+    return;
+  }
+  const stream = mainCanvas.captureStream(30);
+  recChunks = [];
+  mediaRecorder = new MediaRecorder(stream);
+  mediaRecorder.ondataavailable = (e) => {
+    if (e.data && e.data.size > 0) recChunks.push(e.data);
+  };
+  mediaRecorder.onstop = () => {
+    isRecording = false;
+    btnRecord.classList.remove('recording');
+    btnRecord.textContent = '🔴 Grabar Video (10s)';
+    const blob = new Blob(recChunks, { type: 'video/webm' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `caballo_${currentMode}_${Date.now()}.webm`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    showToast('✅ ¡Video de 10 segundos descargado!');
+  };
+  isRecording = true;
+  mediaRecorder.start(200);
+  btnRecord.classList.add('recording');
+  btnRecord.textContent = '⏹️ Grabando 10s...';
+  showToast('🔴 Grabando clip de 10 segundos en vivo...');
+  setTimeout(() => {
+    if (isRecording && mediaRecorder && mediaRecorder.state !== 'inactive') {
+      mediaRecorder.stop();
+    }
+  }, 10000);
+});
+
+// ============================================================================
+// MAIN RENDER LOOP
+// ============================================================================
+let lastTime = performance.now();
+
+// Offscreen WebGL scene to copy 2D Canvas onto mainCanvas when in Camino A
+const orthoScene = new THREE.Scene();
+const orthoCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+const canvas2DTex = new THREE.CanvasTexture(canvas2D);
+const orthoQuad = new THREE.Mesh(
+  new THREE.PlaneGeometry(2, 2),
+  new THREE.MeshBasicMaterial({ map: canvas2DTex })
+);
+orthoScene.add(orthoQuad);
+
+function animate(now) {
+  const dt = Math.min(0.05, (now - lastTime) / 1000);
+  lastTime = now;
+  globalTime += dt * gallopSpeed;
+
+  const w = stageEl.clientWidth;
+  const h = stageEl.clientHeight;
+  if (mainCanvas.width !== w || mainCanvas.height !== h) {
+    renderer.setSize(w, h, false);
+  }
+
+  if (currentMode === 'caminoB') {
+    renderer.setScissorTest(false);
+    cameraB.aspect = w / h;
+    cameraB.updateProjectionMatrix();
+    controlsB.update();
+
+    // Scroll ground texture & grass blades to simulate forward gallop speed
+    groundTexMeadow.offset.x = (globalTime * 0.42) % 1;
+    groundTexCanyon.offset.x = (globalTime * 0.42) % 1;
+
+    for (let i = 0; i < grassCount; i++) {
+      const g = grassData[i];
+      let gx = ((g.x - globalTime * 6.5) % 36);
+      if (gx < -18) gx += 36;
+      dummyObj.position.set(gx, 0, g.z);
+      dummyObj.scale.set(g.s, envStyle === 'meadow' ? g.s : 0.25, g.s);
+      dummyObj.rotation.z = g.lean + Math.sin(globalTime * 5 + i) * 0.12;
+      dummyObj.updateMatrix();
+      grassInst.setMatrixAt(i, dummyObj.matrix);
+    }
+    grassInst.instanceMatrix.needsUpdate = true;
+
+    updateHorseGallop(horseB, globalTime, dt, true);
+
+    // Update hoof splash particles
+    for (let i = 0; i < splashCount; i++) {
+      const p = splashParticles[i];
+      if (p.life > 0) {
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.z += p.vz * dt;
+        p.vy -= 9.8 * dt;
+        p.life -= dt * 1.8;
+        if (p.y < 0) p.life = 0;
+        dummyObj.position.set(p.x, p.y, p.z);
+        const sc = Math.max(0.01, p.s * p.life);
+        dummyObj.scale.set(sc, sc, sc);
+      } else {
+        dummyObj.position.set(0, -10, 0);
+        dummyObj.scale.set(0.001, 0.001, 0.001);
+      }
+      dummyObj.updateMatrix();
+      splashInst.setMatrixAt(i, dummyObj.matrix);
+    }
+    splashInst.instanceMatrix.needsUpdate = true;
+
+    renderer.render(sceneB, cameraB);
+  } else if (currentMode === 'quad') {
+    renderer.setScissorTest(true);
+    const hw = Math.floor(w / 2);
+    const hh = Math.floor(h / 2);
+    const viewports = [
+      [0, hh, hw, hh],       // Top-Left: Fable 5.2
+      [hw, hh, w - hw, hh],  // Top-Right: Gemini 4 Carbon
+      [0, 0, hw, hh],        // Bottom-Left: Gpt-6 Astra
+      [hw, 0, w - hw, hh],   // Bottom-Right: Gemini 4 Hydrogen
+    ];
+    for (let i = 0; i < 4; i++) {
+      const [vx, vy, vw, vh] = viewports[i];
+      const q = quadScenes[i];
+      q.camera.aspect = vw / vh;
+      q.camera.updateProjectionMatrix();
+      updateHorseGallop(q.horse, globalTime + i * 0.2, dt, false);
+      renderer.setViewport(vx, vy, vw, vh);
+      renderer.setScissor(vx, vy, vw, vh);
+      renderer.render(q.scene, q.camera);
+    }
+    renderer.setScissorTest(false);
+    renderer.setViewport(0, 0, w, h);
+  } else if (currentMode === 'caminoA') {
+    renderer.setScissorTest(false);
+    renderCaminoA25D(w, h, globalTime);
+    canvas2DTex.needsUpdate = true;
+    renderer.render(orthoScene, orthoCam);
+  }
+
+  requestAnimationFrame(animate);
+}
+
+// URL query parameters for deterministic verification screenshots
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('mode')) {
+  const m = urlParams.get('mode');
+  const targetBtn = document.querySelector(`.tab-btn[data-mode="${m}"]`);
+  if (targetBtn) targetBtn.click();
+}
+if (urlParams.get('rig') === '1') {
+  btnRig.click();
+}
+
+requestAnimationFrame(animate);
+</script>
+</body>
+</html>
