@@ -14,8 +14,10 @@
     html, body {
       margin: 0;
       padding: 0;
-      width: 100%;
-      height: 100%;
+      width: 100vw;
+      max-width: 100vw;
+      height: 100vh;
+      height: 100dvh;
       background: #140f0c;
       color: #f7ede4;
       font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
@@ -24,19 +26,30 @@
       flex-direction: column;
     }
 
-    /* Barra de Controles Superior (No sale en el video grabado, limpia y accesible en celular y PC) */
+    /* Barra de Controles Superior Compacta (No sale en el video grabado, perfecta en celular y PC) */
     #control-bar {
       width: 100%;
       padding: 8px 12px;
-      background: rgba(26, 19, 15, 0.95);
-      border-bottom: 1px solid rgba(216, 158, 130, 0.28);
+      background: rgba(22, 15, 11, 0.96);
+      border-bottom: 1px solid rgba(216, 158, 130, 0.25);
       display: flex;
       flex-wrap: wrap;
-      gap: 7px;
+      gap: 8px;
       align-items: center;
       justify-content: center;
       z-index: 30;
       flex-shrink: 0;
+      transition: all 0.25s ease;
+    }
+
+    /* Cuando se está grabando, desaparecen todos los botones salvo detener grabación */
+    body.is-recording .hide-on-record,
+    body.is-recording #style-modal-backdrop {
+      display: none !important;
+    }
+    body.is-recording #control-bar {
+      padding: 5px 10px;
+      background: rgba(18, 12, 9, 0.85);
     }
 
     .ctrl-btn {
@@ -50,6 +63,7 @@
       cursor: pointer;
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 6px;
       transition: transform 0.1s ease, background 0.15s ease, border-color 0.15s ease;
       white-space: nowrap;
@@ -60,12 +74,19 @@
       background: linear-gradient(180deg, #48352a, #31241c);
     }
     .ctrl-btn:active {
-      transform: scale(0.95);
+      transform: scale(0.96);
+    }
+    .ctrl-btn.style-open-btn {
+      background: linear-gradient(180deg, #e5a889, #c48060);
+      color: #1c110b;
+      border-color: #ffe2d1;
+      font-weight: 800;
+      box-shadow: 0 3px 12px rgba(216, 155, 126, 0.4);
     }
     .ctrl-btn.upload-btn {
-      background: linear-gradient(180deg, #d89b7e, #b5785c);
-      color: #1f1510;
-      border-color: #ffe0cf;
+      background: linear-gradient(180deg, #4a3529, #33241b);
+      color: #ffe7d6;
+      border-color: #e0a384;
       font-weight: 800;
     }
     .ctrl-btn.record-btn {
@@ -101,14 +122,140 @@
       outline: none;
     }
 
-    /* Contenedor del Estudio (Se ajusta automáticamente a cualquier pantalla de celular o PC) */
+    /* Ventana / Caja Desplegable de los 23 Estilos Artísticos */
+    #style-modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      background: rgba(10, 7, 5, 0.84);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 10px;
+    }
+    #style-modal-backdrop.open {
+      display: flex;
+    }
+    #style-modal-box {
+      width: 100%;
+      max-width: 920px;
+      max-height: 90vh;
+      max-height: 90dvh;
+      background: #1e1510;
+      border: 1px solid rgba(224, 163, 132, 0.45);
+      border-radius: 16px;
+      box-shadow: 0 22px 60px rgba(0, 0, 0, 0.85);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .modal-header {
+      padding: 12px 16px;
+      background: #281c15;
+      border-bottom: 1px solid rgba(218, 162, 134, 0.22);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .modal-header h2 {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 800;
+      color: #fcece2;
+    }
+    .modal-close-btn {
+      background: rgba(255, 255, 255, 0.1);
+      color: #f8ede3;
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      border-radius: 8px;
+      padding: 6px 11px;
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .modal-body {
+      padding: 12px 14px 18px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .cat-block {
+      background: rgba(14, 9, 7, 0.55);
+      border: 1px solid rgba(218, 162, 134, 0.18);
+      border-radius: 13px;
+      padding: 10px;
+    }
+    .cat-title {
+      font-size: 12.5px;
+      font-weight: 800;
+      color: #e5a889;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin: 0 0 8px 0;
+    }
+    .style-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
+      gap: 8px;
+    }
+    .style-card-btn {
+      background: #2b1f18;
+      color: #f2e4d8;
+      border: 1px solid rgba(218, 162, 134, 0.26);
+      border-radius: 10px;
+      padding: 8px 10px;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      transition: all 0.15s ease;
+      min-width: 0;
+    }
+    .style-card-btn:hover {
+      background: #3b2a21;
+      border-color: #f0b89a;
+    }
+    .style-card-btn.active {
+      background: linear-gradient(180deg, #e0a384, #c58263);
+      color: #1b110c;
+      border-color: #fff;
+      box-shadow: 0 3px 12px rgba(224, 163, 132, 0.45);
+    }
+    .style-card-btn .st-name {
+      font-size: 12.5px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .style-card-btn .st-desc {
+      font-size: 10.8px;
+      opacity: 0.84;
+      line-height: 1.25;
+      font-weight: 500;
+    }
+
+    /* Contenedor del Estudio (Se ajusta automáticamente a cualquier pantalla de celular o PC sin desbordar) */
     #studio-stage {
-      flex: 1;
+      flex: 1 1 0%;
+      min-width: 0;
+      min-height: 0;
       width: 100%;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 8px;
+      padding: 6px;
       overflow: hidden;
       position: relative;
     }
@@ -116,19 +263,19 @@
     #studio-canvas {
       max-width: 100%;
       max-height: 100%;
-      width: auto;
-      height: auto;
-      border-radius: 22px;
-      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.65);
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      border-radius: 18px;
       display: block;
     }
 
     #toast-banner {
       position: fixed;
-      bottom: 18px;
+      bottom: 16px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(34, 24, 18, 0.94);
+      background: rgba(34, 24, 18, 0.95);
       color: #ffe8d6;
       border: 1px solid rgba(216, 158, 130, 0.55);
       padding: 9px 18px;
@@ -139,60 +286,103 @@
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.25s ease;
-      z-index: 50;
+      z-index: 120;
       text-align: center;
       max-width: 92vw;
     }
 
     @media (max-width: 768px) {
       #control-bar {
-        padding: 6px 8px;
+        padding: 6px 6px;
         gap: 5px;
       }
       .ctrl-btn {
-        padding: 7px 10px;
-        font-size: 11.5px;
+        padding: 6px 9px;
+        font-size: 11px;
+        border-radius: 8px;
       }
       select.ctrl-select {
-        padding: 6px 8px;
-        font-size: 11.5px;
+        padding: 5px 7px;
+        font-size: 10.8px;
+        border-radius: 8px;
+      }
+      #style-modal-backdrop {
+        padding: 6px;
+      }
+      .modal-header {
+        padding: 10px 12px;
+      }
+      .modal-header h2 {
+        font-size: 13px;
+      }
+      .modal-body {
+        padding: 8px 10px 14px;
+        gap: 10px;
+      }
+      .style-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
+      }
+      .style-card-btn {
+        padding: 7px 8px;
+      }
+      .style-card-btn .st-name {
+        font-size: 11.2px;
+      }
+      .style-card-btn .st-desc {
+        font-size: 9.8px;
       }
       #studio-stage {
-        padding: 4px;
+        padding: 3px;
       }
     }
   </style>
 </head>
 <body>
 
-  <!-- Barra de Herramientas Interactiva -->
+  <!-- Barra Superior Compacta (Oculta al grabar video) -->
   <div id="control-bar">
+    <button id="btn-open-styles" class="ctrl-btn style-open-btn hide-on-record" title="Abrir catálogo desplegable con los 23 estilos de dibujo">
+      🎨 Estilo: <span id="current-style-label">Claroscuro / Carboncillo</span> ▾
+    </button>
+
     <input type="file" id="file-input" accept="image/*" style="display:none;" />
-    <button id="btn-upload" class="ctrl-btn upload-btn" title="Subir cualquier foto de tu teléfono o computadora">
+    <button id="btn-upload" class="ctrl-btn upload-btn hide-on-record" title="Subir cualquier foto de tu teléfono o computadora">
       📸 Subir Foto
     </button>
-    <button id="btn-record" class="ctrl-btn record-btn" title="Reiniciar desde cero y grabar todo el video del proceso">
-      🔴 Grabar Proceso (Video)
+    <button id="btn-record" class="ctrl-btn record-btn" title="Reiniciar desde cero y grabar todo el video del proceso sin botones">
+      🔴 Grabar Video
     </button>
-    <button id="btn-share" class="ctrl-btn share-btn" title="Compartir el video grabado por WhatsApp o redes">
+    <button id="btn-share" class="ctrl-btn share-btn hide-on-record" title="Compartir el video grabado por WhatsApp o redes">
       📲 Enviar Video
     </button>
-    <button id="btn-replay" class="ctrl-btn" title="Volver a pintar desde cero">
-      🔄 Repetir desde Cero
+    <button id="btn-replay" class="ctrl-btn hide-on-record" title="Volver a pintar desde cero">
+      🔄 Repetir
     </button>
-    <button id="btn-save-img" class="ctrl-btn" title="Descargar cuadro pintado en alta definición">
+    <button id="btn-save-img" class="ctrl-btn hide-on-record" title="Descargar cuadro pintado en alta definición">
       🖼️ Guardar HD
     </button>
-    <select id="sel-layout" class="ctrl-select" title="Cambiar orientación del estudio">
-      <option value="auto">📐 Diseño: Automático</option>
-      <option value="horizontal">🖥️ Horizontal (16:9 X/Twitter)</option>
-      <option value="vertical">📱 Vertical (9:16 Celular/Reel)</option>
+    <select id="sel-layout" class="ctrl-select hide-on-record" title="Cambiar orientación del estudio">
+      <option value="auto">📐 Auto</option>
+      <option value="horizontal">🖥️ 16:9 PC</option>
+      <option value="vertical">📱 9:16 Celular</option>
     </select>
-    <select id="sel-duration" class="ctrl-select" title="Duración total del pintado">
-      <option value="12">⏱️ 12 seg</option>
-      <option value="20" selected>⏱️ 20 seg (Original)</option>
-      <option value="30">⏱️ 30 seg</option>
+    <select id="sel-duration" class="ctrl-select hide-on-record" title="Duración total del pintado">
+      <option value="12">⏱️ 12s</option>
+      <option value="20" selected>⏱️ 20s</option>
+      <option value="30">⏱️ 30s</option>
     </select>
+  </div>
+
+  <!-- Ventana / Caja Desplegable con las 5 Categorías y todos los Estilos -->
+  <div id="style-modal-backdrop">
+    <div id="style-modal-box">
+      <div class="modal-header">
+        <h2>🎨 Selecciona el Estilo de Dibujo o Pintura (23 Estilos)</h2>
+        <button id="btn-close-styles" class="modal-close-btn">✕ Cerrar</button>
+      </div>
+      <div id="style-categories-container" class="modal-body"></div>
+    </div>
   </div>
 
   <!-- Escenario Principal donde se renderiza y graba todo el Estudio -->
@@ -239,12 +429,19 @@ const blurMedCanvas = document.createElement('canvas');
 blurMedCanvas.width = PAINT_RES; blurMedCanvas.height = PAINT_RES;
 const blurMedCtx = blurMedCanvas.getContext('2d', { willReadFrequently: true });
 
+// Lienzo objetivo pre-renderizado para cada uno de los 23 estilos artísticos
+const styleTargetCanvas = document.createElement('canvas');
+styleTargetCanvas.width = PAINT_RES; styleTargetCanvas.height = PAINT_RES;
+const styleTargetCtx = styleTargetCanvas.getContext('2d', { willReadFrequently: true });
+
 const studioCanvas = document.getElementById('studio-canvas');
 const studioCtx = studioCanvas.getContext('2d');
 
 let totalDuration = 20.0;
 let layoutMode = 'auto'; // 'auto' | 'horizontal' | 'vertical'
 let isVerticalStudio = false;
+let currentStyle = 'carboncillo'; // Por defecto abrimos en Claroscuro / Carboncillo corregido
+let currentLoadedImage = null;
 
 let strokeQueue = [];
 let renderedStrokeIdx = 0;
@@ -265,7 +462,6 @@ let activeBrushInfo = {
   tierIdx: 0,
 };
 
-// Toast Helper
 let toastTimer = null;
 function showToast(msg, ms = 2800) {
   const el = document.getElementById('toast-banner');
@@ -276,7 +472,6 @@ function showToast(msg, ms = 2800) {
   toastTimer = setTimeout(() => { el.style.opacity = '0'; }, ms);
 }
 
-// Deterministic PRNG for organic stroke order
 function mulberry32(seed) {
   let a = seed >>> 0;
   return function () {
@@ -288,43 +483,467 @@ function mulberry32(seed) {
   };
 }
 
+function clampByte(v) {
+  return Math.max(0, Math.min(255, Math.round(v)));
+}
+
 function rgbToHex(r, g, b) {
-  const toH = (n) => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, '0');
+  const toH = (n) => clampByte(n).toString(16).padStart(2, '0');
   return '#' + toH(r) + toH(g) + toH(b);
 }
 
+const BAYER_4X4 = [
+  [ -0.375,  0.125, -0.250,  0.250 ],
+  [  0.375, -0.125,  0.500,  0.000 ],
+  [ -0.187,  0.312, -0.312,  0.187 ],
+  [  0.437, -0.062,  0.312, -0.187 ]
+];
+
 // ============================================================================
-// 2. IMAGE ANALYSIS & MULTI-PASS BRUSHSTROKE PLANNER
+// 2. IMAGE ANALYSIS & 23-STYLE MASTERPIECE TARGET SYNTHESIZER
 // ============================================================================
 let refPixels = null;
 let medPixels = null;
 let largePixels = null;
+let styleTargetPixels = null;
+let normLumMap = new Float32Array(PAINT_RES * PAINT_RES);
 let edgeMagMap = new Float32Array(PAINT_RES * PAINT_RES);
 let edgeAngleMap = new Float32Array(PAINT_RES * PAINT_RES);
 
+function buildStyleTargetBuffer(style) {
+  const imgData = styleTargetCtx.createImageData(PAINT_RES, PAINT_RES);
+  const dst = imgData.data;
+  const N = PAINT_RES;
+
+  for (let y = 0; y < N; y++) {
+    for (let x = 0; x < N; x++) {
+      const idx = y * N + x;
+      const p = idx * 4;
+      let r = refPixels[p], g = refPixels[p + 1], b = refPixels[p + 2];
+      const mr = medPixels[p], mg = medPixels[p + 1], mb = medPixels[p + 2];
+      const lr = largePixels[p], lg = largePixels[p + 1], lb = largePixels[p + 2];
+      const nLum = normLumMap[idx]; // 0..255 auto-leveled luminance
+      const mLum = 0.299 * mr + 0.587 * mg + 0.114 * mb;
+      const lLum = 0.299 * lr + 0.587 * lg + 0.114 * lb;
+      const edge = edgeMagMap[idx]; // 0..1
+      const grain = (((x * 73856093) ^ (y * 19349663)) & 255) / 255.0 - 0.5;
+
+      let or = r, og = g, ob = b;
+
+      switch (style) {
+        case 'realismo': {
+          // Realismo clásico: riqueza tonal cálida y modelado suave de bordes
+          const sat = 1.12;
+          const avg = 0.299 * r + 0.587 * g + 0.114 * b;
+          or = avg + (r - avg) * sat + 4;
+          og = avg + (g - avg) * sat + 2;
+          ob = avg + (b - avg) * sat - 2;
+          break;
+        }
+        case 'hiperrealismo': {
+          // Hiperrealismo: enfoque microscópico (unsharp mask para poros, ojos y reflejos)
+          const sharp = 1.48;
+          or = r + (r - mr) * sharp;
+          og = g + (g - mg) * sharp;
+          ob = b + (b - mb) * sharp;
+          break;
+        }
+        case 'boceto': {
+          // Boceto (Sketch): papel crema cálido con líneas de construcción sueltas y grafito gestual
+          const dodge = Math.min(255, (nLum * 256) / Math.max(12, 256 - (255 - mLum) * 0.92));
+          const diag1 = Math.sin((x + y) * 0.65) * 0.5 + 0.5;
+          let sketch = 248;
+          if (nLum < 195 && diag1 > 0.58) sketch -= (200 - nLum) * 0.55;
+          sketch = Math.min(sketch, dodge) - edge * 145 + grain * 12;
+          const sTone = clampByte(sketch);
+          // Ligeros trazos guía azul-sepia en bordes medios
+          if (edge > 0.22 && ((x + y) % 7 === 0)) {
+            or = clampByte(sTone * 0.78); og = clampByte(sTone * 0.86); ob = clampByte(Math.min(255, sTone * 1.05 + 18));
+          } else {
+            or = clampByte(sTone * 0.98 + 4); og = clampByte(sTone * 0.95 + 1); ob = clampByte(sTone * 0.89 - 4);
+          }
+          break;
+        }
+        case 'carboncillo':
+        case 'lapiz': {
+          // Claroscuro / Carboncillo (como las referencias de Google: fondo de papel claro, esfumino gris plata luminoso y carbón mate en rasgos)
+          const invBlur = 255 - mLum;
+          const colorDodge = Math.min(255, (nLum * 256) / Math.max(14, 256 - invBlur * 0.88));
+          // Levantamos tonos medios/sombras y aplicamos viñeta de papel blanco hacia los bordes exteriores como un retrato académico a carboncillo
+          const distFromFace = Math.hypot((x - N * 0.5) / (N * 0.5), (y - N * 0.48) / (N * 0.5));
+          const bgPaperFade = Math.max(0, Math.min(1, (distFromFace - 0.58) / 0.45)) * (1.0 - Math.min(1, edge * 2.5));
+          const liftedTone = Math.pow(nLum / 255, 0.58) * 236 + 18;
+          let charTone = liftedTone * 0.44 + colorDodge * 0.56;
+          charTone = charTone + (246 - charTone) * bgPaperFade * 0.72;
+          // Textura diagonal fina de barra de carboncillo y grano de papel Canson
+          const strokeTex = Math.sin((x + y) * 0.85) * (charTone < 220 ? 5.5 : 1.5);
+          charTone -= Math.pow(edge, 0.82) * 155;
+          const paperGrain = grain * (charTone > 40 && charTone < 230 ? 15 : 5);
+          const finalG = clampByte(Math.max(16, charTone + strokeTex + paperGrain));
+          or = clampByte(finalG * 0.99 + 2);
+          og = clampByte(finalG * 0.98 + 1);
+          ob = clampByte(finalG * 0.96);
+          break;
+        }
+        case 'achurado': {
+          // Achurado (Hatching y Cross-hatching): papel blanco puro con líneas paralelas y cruzadas
+          let ink = 250; // Papel blanco limpio
+          // Trama 1: Diagonal /// (-45 grados) para tonos medios-claros
+          const d1 = (x + y) % 6;
+          if (nLum < 222 && d1 <= (nLum < 130 ? 1 : 0)) ink -= 95;
+          // Trama 2: Diagonal cruzada \\\ (+45 grados) para sombras medias
+          const d2 = ((x - y) % 6 + 6) % 6;
+          if (nLum < 165 && d2 <= (nLum < 90 ? 1 : 0)) ink -= 85;
+          // Trama 3: Horizontal --- para sombras intensas
+          if (nLum < 105 && (y % 5 === 0)) ink -= 65;
+          // Trama 4: Vertical ||| para sombras muy profundas
+          if (nLum < 55 && (x % 5 === 0)) ink -= 55;
+          // Contorno de plumilla/lápiz nítido en todos los rasgos
+          if (edge > 0.20) ink -= edge * 195;
+          const hVal = clampByte(Math.max(16, ink + grain * 8));
+          or = hVal; og = clampByte(hVal * 0.99); ob = clampByte(hVal * 0.96);
+          break;
+        }
+        case 'oleo': {
+          // Óleo Pincelado: saturación rica, separación cálido/frío y pigmento pictórico
+          const avg = 0.299 * r + 0.587 * g + 0.114 * b;
+          let nr = avg + (r - avg) * 1.32 + (avg > 130 ? 9 : -4);
+          let ng = avg + (g - avg) * 1.32 + (avg > 130 ? 3 : 0);
+          let nb = avg + (b - avg) * 1.32 + (avg > 130 ? -6 : 9);
+          or = clampByte(Math.round(nr / 10) * 10);
+          og = clampByte(Math.round(ng / 10) * 10);
+          ob = clampByte(Math.round(nb / 10) * 10);
+          break;
+        }
+        case 'manga': {
+          // Manga y Anime: Blanco y negro editorial japonés con tramas de puntos (Screentones) y tinta G-Pen
+          const dotX = (x % 6) - 2.5, dotY = (y % 6) - 2.5;
+          const dotDist = Math.hypot(dotX, dotY); // 0..3.53
+          let mVal = 252;
+          if (nLum < 52) {
+            mVal = 18; // Negro sólido de tinta manga
+          } else if (nLum < 210) {
+            // Radio del punto screentone proporcional a la sombra
+            const maxR = ((215 - nLum) / 165) * 3.1;
+            if (dotDist < maxR) mVal = 28;
+          }
+          if (edge > 0.22) mVal = Math.min(mVal, clampByte(250 - edge * 260));
+          or = mVal; og = mVal; ob = clampByte(Math.min(255, mVal + 3));
+          break;
+        }
+        case 'chibi': {
+          // Chibi / Kawaii: lente deformada tierna en el centro + colores pastel cel-shaded + rubor rosado y contornos suaves
+          const nx = (x - N * 0.5) / (N * 0.5);
+          const ny = (y - N * 0.44) / (N * 0.5);
+          const rad = Math.hypot(nx, ny);
+          let sx = x, sy = y;
+          if (rad < 0.85) {
+            const warp = Math.pow(rad / 0.85, 1.38) * 0.85 / Math.max(0.001, rad);
+            sx = Math.max(0, Math.min(N - 1, Math.round(N * 0.5 + nx * warp * (N * 0.5))));
+            sy = Math.max(0, Math.min(N - 1, Math.round(N * 0.44 + ny * warp * (N * 0.5))));
+          }
+          const sp = (sy * N + sx) * 4;
+          const cr = medPixels[sp], cg = medPixels[sp + 1], cb = medPixels[sp + 2];
+          const cEdge = edgeMagMap[sy * N + sx];
+          const avg = 0.299 * cr + 0.587 * cg + 0.114 * cb;
+          // Pastel-vibrant cel shading (3 bandas suaves)
+          let nr = Math.round((avg + (cr - avg) * 1.45 + 22) / 32) * 32;
+          let ng = Math.round((avg + (cg - avg) * 1.45 + 16) / 32) * 32;
+          let nb = Math.round((avg + (cb - avg) * 1.45 + 20) / 32) * 32;
+          if (cEdge > 0.26) {
+            nr *= 0.28; ng *= 0.22; nb *= 0.26;
+          }
+          or = clampByte(nr); og = clampByte(ng); ob = clampByte(nb);
+          break;
+        }
+        case 'comic_americano': {
+          // Cómic Americano (Marvel/DC): sombras negras sólidas (spotted blacks), color heroico saturado y puntos halftone
+          if (nLum < 68 || edge > 0.34) {
+            or = 16; og = 15; ob = 20;
+          } else {
+            const avg = 0.299 * r + 0.587 * g + 0.114 * b;
+            let nr = Math.round((avg + (r - avg) * 1.55) / 36) * 36;
+            let ng = Math.round((avg + (g - avg) * 1.55) / 36) * 36;
+            let nb = Math.round((avg + (b - avg) * 1.55) / 36) * 36;
+            if (nLum < 145 && ((x + y) % 4 === 0)) {
+              nr *= 0.65; ng *= 0.65; nb *= 0.65;
+            }
+            or = clampByte(nr); og = clampByte(ng); ob = clampByte(nb);
+          }
+          break;
+        }
+        case 'linea_clara': {
+          // Línea Clara (Tintín / Hergé): colores planos limpios sin degradado + línea de contorno negra uniforme
+          if (edge > 0.25) {
+            or = 20; og = 18; ob = 18;
+          } else {
+            const avg = 0.299 * mr + 0.587 * mg + 0.114 * mb;
+            const nr = Math.round((avg + (mr - avg) * 1.25 + 14) / 38) * 38;
+            const ng = Math.round((avg + (mg - avg) * 1.25 + 12) / 38) * 38;
+            const nb = Math.round((avg + (mb - avg) * 1.25 + 8) / 38) * 38;
+            or = clampByte(nr); og = clampByte(ng); ob = clampByte(nb);
+          }
+          break;
+        }
+        case 'cartoon': {
+          // Cartoon / Caricatura: cel-shading vibrante de animación occidental y contorno negro expresivo
+          const avg = 0.299 * mr + 0.587 * mg + 0.114 * mb;
+          let nr = Math.round((avg + (mr - avg) * 1.65 + 10) / 42) * 42;
+          let ng = Math.round((avg + (mg - avg) * 1.65 + 10) / 42) * 42;
+          let nb = Math.round((avg + (mb - avg) * 1.65 + 10) / 42) * 42;
+          if (edge > 0.24) {
+            const f = Math.max(0.12, 1.0 - edge * 1.8);
+            nr *= f; ng *= f; nb *= f;
+          }
+          or = clampByte(nr); og = clampByte(ng); ob = clampByte(nb);
+          break;
+        }
+        case 'vectorial': {
+          // Vectorial / Flat Design: regiones geométricas planas ultralimpias sin textura ni grano
+          const avg = 0.299 * mr + 0.587 * mg + 0.114 * mb;
+          const q = 46;
+          let nr = Math.round((avg + (mr - avg) * 1.38) / q) * q;
+          let ng = Math.round((avg + (mg - avg) * 1.38) / q) * q;
+          let nb = Math.round((avg + (mb - avg) * 1.38) / q) * q;
+          or = clampByte(nr); og = clampByte(ng); ob = clampByte(nb);
+          break;
+        }
+        case 'linea_continua': {
+          // Línea Continua (One-Line Art): un solo trazo ininterrumpido en espiral/onda modulada sobre papel galería limpio
+          const dx = x - N * 0.5, dy = y - N * 0.48;
+          const dist = Math.hypot(dx, dy);
+          const theta = Math.atan2(dy, dx);
+          const spiralPhase = (dist * 0.68 + theta * (7.5 / (Math.PI * 2))) % 7.5;
+          const darkness = Math.max(0, (215 - nLum) / 215);
+          const lineThickness = darkness * 3.4 + edge * 3.2;
+          const distToSpiral = Math.abs(spiralPhase - 3.75);
+          if ((lineThickness > 0.42 && distToSpiral < lineThickness * 0.5) || edge > 0.28) {
+            or = 24; og = 20; ob = 18;
+          } else {
+            or = 248; og = 243; ob = 235;
+          }
+          break;
+        }
+        case 'concept_art': {
+          // Arte Conceptual (Concept Art): atmósfera cinematográfica (sombras azul petróleo, luces ámbar doradas y luz de borde)
+          const shadowW = 1.0 - (nLum / 255.0);
+          let nr = r * 1.05 + (nLum > 140 ? 22 : -14 * shadowW);
+          let ng = g * 1.02 + (nLum > 140 ? 8 : 4 * shadowW);
+          let nb = b * 1.02 + (nLum > 140 ? -12 : 28 * shadowW);
+          // Rim light cinematográfico en bordes iluminados
+          if (edge > 0.28 && nLum > 110) {
+            nr += edge * 55; ng += edge * 45; nb += edge * 25;
+          }
+          or = clampByte(nr); og = clampByte(ng); ob = clampByte(nb);
+          break;
+        }
+        case 'doodle': {
+          // Garabato (Doodle Art): patrones densos de micro-garabatos, espirales y ondas rellenando las sombras sobre papel limpio
+          const pat1 = Math.sin(x * 0.48 + Math.cos(y * 0.48) * 2.2);
+          const pat2 = Math.cos((x - y) * 0.42) * Math.sin((x + y) * 0.42);
+          let isInk = false;
+          if (edge > 0.22) isInk = true;
+          else if (nLum < 70 && (pat1 > -0.15 || pat2 > 0.15)) isInk = true;
+          else if (nLum < 130 && pat1 > 0.35) isInk = true;
+          else if (nLum < 168 && pat2 > 0.58) isInk = true;
+          if (isInk) {
+            const huePick = ((Math.floor(x / 18) + Math.floor(y / 18)) % 4);
+            if (nLum > 85 && huePick === 0) { or = 215; og = 55; ob = 75; }
+            else if (nLum > 85 && huePick === 1) { or = 40; og = 115; ob = 195; }
+            else { or = 28; og = 25; ob = 32; }
+          } else {
+            or = 250; og = 247; ob = 240;
+          }
+          break;
+        }
+        case 'pixel': {
+          // Pixel Art 16-Bits: bloques de 6x6 con dithering ordenado Bayer 4x4 y paleta de 16-bits
+          const cell = 6;
+          const gx = Math.floor(x / cell) * cell + 3;
+          const gy = Math.floor(y / cell) * cell + 3;
+          const gp = (Math.min(N - 1, gy) * N + Math.min(N - 1, gx)) * 4;
+          const pr = refPixels[gp], pg = refPixels[gp + 1], pb = refPixels[gp + 2];
+          const pEdge = edgeMagMap[Math.min(N - 1, gy) * N + Math.min(N - 1, gx)];
+          const bx = Math.floor(x / cell) & 3, by = Math.floor(y / cell) & 3;
+          const dither = BAYER_4X4[by][bx] * 22;
+          const avg = 0.299 * pr + 0.587 * pg + 0.114 * pb;
+          let nr = Math.round((avg + (pr - avg) * 1.35 + dither) / 36) * 36;
+          let ng = Math.round((avg + (pg - avg) * 1.35 + dither) / 36) * 36;
+          let nb = Math.round((avg + (pb - avg) * 1.35 + dither) / 36) * 36;
+          if (pEdge > 0.36) { nr *= 0.38; ng *= 0.38; nb *= 0.45; }
+          or = clampByte(nr); og = clampByte(ng); ob = clampByte(nb);
+          break;
+        }
+        case 'surrealismo': {
+          // Surrealismo Onírico: ondulación espacial suave + paleta crepuscular dorada/violeta y halos luminosos
+          const wx = Math.max(0, Math.min(N - 1, Math.round(x + Math.sin(y * 0.035) * 4.5)));
+          const wy = Math.max(0, Math.min(N - 1, Math.round(y + Math.cos(x * 0.035) * 4.5)));
+          const sp = (wy * N + wx) * 4;
+          const sr = refPixels[sp], sg = refPixels[sp + 1], sb = refPixels[sp + 2];
+          const sLum = normLumMap[wy * N + wx];
+          const dreamWave = Math.sin(Math.hypot(x - N * 0.5, y - N * 0.45) * 0.06) * 14;
+          or = clampByte(sr * 1.08 + (sLum > 130 ? 24 : 8) + dreamWave);
+          og = clampByte(sg * 0.96 + (sLum > 130 ? 10 : -8));
+          ob = clampByte(sb * 1.15 + (sLum < 130 ? 32 : -5) - dreamWave);
+          break;
+        }
+        case 'cubismo': {
+          // Cubismo Geométrico (Picasso/Braque): descomposición en facetas poligonales con desfase multiperspectiva y tonos ocre/siena/pizarra
+          const cellS = 28;
+          const cx = Math.floor(x / cellS), cy = Math.floor(y / cellS);
+          const lx = x % cellS, ly = y % cellS;
+          const isUpperTri = (lx + ly) < cellS;
+          const facetHash = ((cx * 37 + cy * 101 + (isUpperTri ? 13 : 29)) & 255) / 255.0;
+          const ox = Math.max(0, Math.min(N - 1, Math.round(x + (facetHash - 0.5) * 14)));
+          const oy = Math.max(0, Math.min(N - 1, Math.round(y + (0.5 - facetHash) * 14)));
+          const fp = (oy * N + ox) * 4;
+          const fr = medPixels[fp], fg = medPixels[fp + 1], fb = medPixels[fp + 2];
+          const fLum = normLumMap[oy * N + ox];
+          const isFacetBorder = (lx === 0 || ly === 0 || Math.abs((lx + ly) - cellS) <= 1);
+          if (isFacetBorder || edge > 0.30) {
+            or = 32; og = 25; ob = 20;
+          } else {
+            // Paleta cubista cálida/analítica que conserva la claridad de los rostros
+            const shift = (facetHash - 0.5) * 36;
+            or = clampByte(fr * 0.65 + fLum * 0.42 + 18 + shift);
+            og = clampByte(fg * 0.62 + fLum * 0.35 + 6 + shift * 0.6);
+            ob = clampByte(fb * 0.58 + fLum * 0.28 - 8 - shift * 0.4);
+          }
+          break;
+        }
+        case 'pop_art': {
+          // Pop Art (Warhol / Lichtenstein): colores vibrantes serigráficos, contornos negros gruesos y puntos Ben-Day
+          const dotX = (x % 6) - 2.5, dotY = (y % 6) - 2.5;
+          const isDot = Math.hypot(dotX, dotY) < 1.85;
+          if (edge > 0.26 || nLum < 48) {
+            or = 18; og = 14; ob = 22;
+          } else if (nLum < 120) {
+            // Sombra Pop Art en azul cian / púrpura vibrante con puntos Ben-Day magenta
+            or = isDot ? 235 : 38; og = isDot ? 45 : 155; ob = isDot ? 135 : 225;
+          } else if (nLum < 195) {
+            // Tonos medios con puntos Ben-Day clásicos sobre piel coral/amarillo pop
+            or = isDot ? 242 : 255; og = isDot ? 95 : 205; ob = isDot ? 115 : 145;
+          } else {
+            // Altas luces amarillo limón / blanco pop
+            or = 255; og = 242; ob = 95;
+          }
+          break;
+        }
+        case 'zentangle': {
+          // Zentangle / Mandala: patrones simétricos meditativos dentro de las sombras sobre fondo blanco limpio
+          const dx = x - N * 0.5, dy = y - N * 0.48;
+          const rad = Math.hypot(dx, dy);
+          const ang = Math.atan2(dy, dx);
+          const mandalaRing = Math.sin(rad * 0.35) * Math.cos(ang * 16);
+          const weave = Math.sin(x * 0.55) * Math.sin(y * 0.55);
+          let zVal = 250;
+          if (edge > 0.20) {
+            zVal = 18;
+          } else if (nLum < 80) {
+            zVal = (weave > -0.20) ? 22 : 244;
+          } else if (nLum < 145) {
+            zVal = (mandalaRing > 0.22) ? 28 : 248;
+          } else if (nLum < 178) {
+            zVal = ((x + y) % 8 === 0 && (x - y) % 8 === 0) ? 45 : 250;
+          }
+          or = zVal; og = zVal; ob = zVal;
+          break;
+        }
+        case 'dibujo_tecnico': {
+          // Dibujo Técnico y Arquitectónico (Blueprint CAD): fondo azul de Prusia con cuadrícula milimétrica y líneas CAD blancas/cian
+          const isMajorGrid = (x % 60 === 0) || (y % 60 === 0);
+          const isMinorGrid = (x % 12 === 0) || (y % 12 === 0);
+          // Fondo azul cianotipo (#0d3b66)
+          let br = 13, bg = 59, bb = 102;
+          if (isMajorGrid) { br = 28; bg = 88; bb = 142; }
+          else if (isMinorGrid) { br = 18; bg = 70; bb = 118; }
+          // Círculos de compás constructivos alrededor del centro
+          const distC = Math.hypot(x - N * 0.5, y - N * 0.48);
+          const isCompassLine = Math.abs(distC - 180) < 1.0 || Math.abs(distC - 260) < 1.0 || (x === N / 2 && y % 8 < 4) || (y === Math.round(N * 0.48) && x % 8 < 4);
+          if (isCompassLine) { br = 75; bg = 165; bb = 225; }
+          // Líneas de contorno CAD y achurado técnico isométrico
+          const cadHatch = (nLum < 140 && ((x + y) % 6 === 0)) ? (145 - nLum) / 145 : 0;
+          const cadLine = Math.min(1.0, edge * 1.85 + cadHatch * 0.65);
+          or = clampByte(br + (248 - br) * cadLine);
+          og = clampByte(bg + (252 - bg) * cadLine);
+          ob = clampByte(bb + (255 - bb) * cadLine);
+          break;
+        }
+        case 'ilustracion_cientifica': {
+          // Ilustración Científica y Botánica: pergamino naturalista con punteado (stippling) de precisión y acuarela suave
+          const isFrame = (x > 22 && x < N - 22 && y > 22 && y < N - 22) && (x === 24 || x === N - 24 || y === 24 || y === N - 24);
+          if (isFrame) {
+            or = 75; og = 58; ob = 42;
+          } else {
+            // Lavado de acuarela naturalista suave sobre pergamino (#f4ebd9)
+            const avg = 0.299 * r + 0.587 * g + 0.114 * b;
+            let wr = 244 * 0.42 + (avg + (r - avg) * 0.85) * 0.58;
+            let wg = 235 * 0.42 + (avg + (g - avg) * 0.85) * 0.58;
+            let wb = 217 * 0.42 + (avg + (b - avg) * 0.85) * 0.58;
+            // Punteado científico (stippling) y líneas anatómicas finas en sombras y bordes
+            const stipple = (nLum < 150 && grain > (nLum / 160 - 0.55)) ? 45 : 0;
+            const inkCut = edge * 155 + stipple;
+            or = clampByte(wr - inkCut);
+            og = clampByte(wg - inkCut);
+            ob = clampByte(wb - inkCut);
+          }
+          break;
+        }
+        case 'storyboard': {
+          // Storyboard Cinematográfico: viñeta de director con guías de tercios, marcador gris Copic y trazos dinámicos de lápiz
+          const isThirds = (Math.abs(x - N / 3) <= 1 || Math.abs(x - (N * 2) / 3) <= 1 || Math.abs(y - N / 3) <= 1 || Math.abs(y - (N * 2) / 3) <= 1);
+          // Marcador gris de storyboard en 4 niveles (blanco papel, gris 20%, gris 50%, carbón 85%)
+          let marker = nLum > 195 ? 248 : (nLum > 135 ? 205 : (nLum > 75 ? 148 : 82));
+          if (nLum < 160 && ((x + y) % 5 === 0)) marker -= 24;
+          marker -= edge * 165;
+          const mByte = clampByte(marker + grain * 10);
+          if (isThirds && edge < 0.25) {
+            // Líneas guía azules de encuadre de cámara
+            or = clampByte(mByte * 0.75); og = clampByte(mByte * 0.88); ob = clampByte(Math.min(255, mByte * 1.08 + 25));
+          } else {
+            or = mByte; og = clampByte(mByte * 0.99); ob = clampByte(mByte * 0.96);
+          }
+          break;
+        }
+        default: {
+          or = r; og = g; ob = b;
+          break;
+        }
+      }
+
+      dst[p]     = or;
+      dst[p + 1] = og;
+      dst[p + 2] = ob;
+      dst[p + 3] = 255;
+    }
+  }
+
+  styleTargetCtx.putImageData(imgData, 0, 0);
+  styleTargetPixels = styleTargetCtx.getImageData(0, 0, PAINT_RES, PAINT_RES).data;
+}
+
 function analyzeAndPlanImage(imgElement) {
-  // 1. Smart 1:1 Center-Crop onto refCanvas
-  const iw = imgElement.naturalWidth || imgElement.width;
-  const ih = imgElement.naturalHeight || imgElement.height;
+  if (imgElement) currentLoadedImage = imgElement;
+  if (!currentLoadedImage) return;
+
+  const iw = currentLoadedImage.naturalWidth || currentLoadedImage.width;
+  const ih = currentLoadedImage.naturalHeight || currentLoadedImage.height;
   const side = Math.min(iw, ih);
   const sx = (iw - side) * 0.5;
-  const sy = (ih - side) * 0.35; // Slight upward bias to frame faces nicely
+  const sy = (ih - side) * 0.35;
 
   refCtx.clearRect(0, 0, PAINT_RES, PAINT_RES);
-  refCtx.drawImage(imgElement, sx, sy, side, side, 0, 0, PAINT_RES, PAINT_RES);
+  refCtx.drawImage(currentLoadedImage, sx, sy, side, side, 0, 0, PAINT_RES, PAINT_RES);
 
-  // Create multi-scale blurred references via downscale/upscale (works on 100% of mobile & desktop browsers!)
   const tmpSmall = document.createElement('canvas');
   tmpSmall.width = 48; tmpSmall.height = 48;
-  const tmpSmallCtx = tmpSmall.getContext('2d');
-  tmpSmallCtx.drawImage(refCanvas, 0, 0, 48, 48);
+  tmpSmall.getContext('2d').drawImage(refCanvas, 0, 0, 48, 48);
   blurLargeCtx.imageSmoothingEnabled = true;
   blurLargeCtx.drawImage(tmpSmall, 0, 0, 48, 48, 0, 0, PAINT_RES, PAINT_RES);
 
   const tmpMed = document.createElement('canvas');
   tmpMed.width = 160; tmpMed.height = 160;
-  const tmpMedCtx = tmpMed.getContext('2d');
-  tmpMedCtx.drawImage(refCanvas, 0, 0, 160, 160);
+  tmpMed.getContext('2d').drawImage(refCanvas, 0, 0, 160, 160);
   blurMedCtx.imageSmoothingEnabled = true;
   blurMedCtx.drawImage(tmpMed, 0, 0, 160, 160, 0, 0, PAINT_RES, PAINT_RES);
 
@@ -332,11 +951,26 @@ function analyzeAndPlanImage(imgElement) {
   medPixels   = blurMedCtx.getImageData(0, 0, PAINT_RES, PAINT_RES).data;
   largePixels = blurLargeCtx.getImageData(0, 0, PAINT_RES, PAINT_RES).data;
 
-  // 2. Compute Sobel Edge Magnitude & Tangent Orientation Map
+  // Compute raw luminance & adaptive auto-levels (5th to 95th percentile) so dark photos never turn black
   const lum = new Float32Array(PAINT_RES * PAINT_RES);
+  const hist = new Uint32Array(256);
   for (let i = 0; i < PAINT_RES * PAINT_RES; i++) {
     const p = i * 4;
-    lum[i] = 0.299 * refPixels[p] + 0.587 * refPixels[p + 1] + 0.114 * refPixels[p + 2];
+    const l = 0.299 * refPixels[p] + 0.587 * refPixels[p + 1] + 0.114 * refPixels[p + 2];
+    lum[i] = l;
+    hist[clampByte(l)]++;
+  }
+
+  const totalPx = PAINT_RES * PAINT_RES;
+  let sum = 0, pLow = 10, pHigh = 245;
+  for (let i = 0; i < 256; i++) {
+    sum += hist[i];
+    if (sum < totalPx * 0.04) pLow = i;
+    if (sum < totalPx * 0.96) pHigh = i;
+  }
+  const span = Math.max(40, pHigh - pLow);
+  for (let i = 0; i < totalPx; i++) {
+    normLumMap[i] = Math.max(0, Math.min(255, ((lum[i] - pLow) / span) * 255));
   }
 
   let maxGrad = 1.0;
@@ -344,25 +978,27 @@ function analyzeAndPlanImage(imgElement) {
     for (let x = 1; x < PAINT_RES - 1; x++) {
       const idx = y * PAINT_RES + x;
       const gx =
-        -lum[(y - 1) * PAINT_RES + (x - 1)] + lum[(y - 1) * PAINT_RES + (x + 1)]
-        - 2 * lum[y * PAINT_RES + (x - 1)]   + 2 * lum[y * PAINT_RES + (x + 1)]
-        - lum[(y + 1) * PAINT_RES + (x - 1)] + lum[(y + 1) * PAINT_RES + (x + 1)];
+        -normLumMap[(y - 1) * PAINT_RES + (x - 1)] + normLumMap[(y - 1) * PAINT_RES + (x + 1)]
+        - 2 * normLumMap[y * PAINT_RES + (x - 1)]   + 2 * normLumMap[y * PAINT_RES + (x + 1)]
+        - normLumMap[(y + 1) * PAINT_RES + (x - 1)] + normLumMap[(y + 1) * PAINT_RES + (x + 1)];
       const gy =
-        -lum[(y - 1) * PAINT_RES + (x - 1)] - 2 * lum[(y - 1) * PAINT_RES + x] - lum[(y - 1) * PAINT_RES + (x + 1)]
-        + lum[(y + 1) * PAINT_RES + (x - 1)] + 2 * lum[(y + 1) * PAINT_RES + x] + lum[(y + 1) * PAINT_RES + (x + 1)];
+        -normLumMap[(y - 1) * PAINT_RES + (x - 1)] - 2 * normLumMap[(y - 1) * PAINT_RES + x] - normLumMap[(y - 1) * PAINT_RES + (x + 1)]
+        + normLumMap[(y + 1) * PAINT_RES + (x - 1)] + 2 * normLumMap[(y + 1) * PAINT_RES + x] + normLumMap[(y + 1) * PAINT_RES + (x + 1)];
       const mag = Math.hypot(gx, gy);
       edgeMagMap[idx] = mag;
       if (mag > maxGrad) maxGrad = mag;
-      // Brushstroke tangent is perpendicular to image gradient!
       edgeAngleMap[idx] = Math.atan2(gy, gx) + Math.PI * 0.5;
     }
   }
   for (let i = 0; i < edgeMagMap.length; i++) {
-    edgeMagMap[i] = Math.min(1.0, edgeMagMap[i] / (maxGrad * 0.65));
+    edgeMagMap[i] = Math.min(1.0, edgeMagMap[i] / (maxGrad * 0.58));
   }
 
-  // 3. Build Multi-Pass Stroke Schedule Across All 8 Brush Sizes (126px -> 3px)
-  const rng = mulberry32(20261111);
+  // Synthesize the exact target masterpiece for the selected style
+  buildStyleTargetBuffer(currentStyle);
+
+  // Plan 8 brush tiers (126px -> 3px)
+  const rng = mulberry32(20261112);
   strokeQueue = [];
 
   for (let tIdx = 0; tIdx < BRUSH_TIERS.length; tIdx++) {
@@ -370,52 +1006,61 @@ function analyzeAndPlanImage(imgElement) {
     const bSize = tier.size;
     const tierStrokes = [];
 
-    // Grid spacing proportional to brush size
-    const step = tIdx === 0 ? 52
-               : tIdx === 1 ? 32
-               : tIdx === 2 ? 19
-               : tIdx === 3 ? 12
-               : tIdx === 4 ? 8
-               : tIdx === 5 ? 6
-               : tIdx === 6 ? 4
-               : 3;
+    let step = tIdx === 0 ? 52
+             : tIdx === 1 ? 32
+             : tIdx === 2 ? 19
+             : tIdx === 3 ? 12
+             : tIdx === 4 ? 8
+             : tIdx === 5 ? 6
+             : tIdx === 6 ? 4
+             : 3;
 
-    const srcData = tIdx <= 1 ? largePixels : (tIdx <= 3 ? medPixels : refPixels);
+    if (currentStyle === 'pixel') {
+      step = tIdx === 0 ? 36 : tIdx === 1 ? 24 : tIdx === 2 ? 18 : tIdx === 3 ? 12 : 6;
+    }
 
     for (let y = Math.floor(step * 0.5); y < PAINT_RES; y += step) {
       for (let x = Math.floor(step * 0.5); x < PAINT_RES; x += step) {
-        const jx = Math.max(0, Math.min(PAINT_RES - 1, Math.round(x + (rng() - 0.5) * step * 0.85)));
-        const jy = Math.max(0, Math.min(PAINT_RES - 1, Math.round(y + (rng() - 0.5) * step * 0.85)));
+        const jitterAmt = currentStyle === 'pixel' ? 0.0 : 0.82;
+        const jx = Math.max(0, Math.min(PAINT_RES - 1, Math.round(x + (rng() - 0.5) * step * jitterAmt)));
+        const jy = Math.max(0, Math.min(PAINT_RES - 1, Math.round(y + (rng() - 0.5) * step * jitterAmt)));
         const flat = jy * PAINT_RES + jx;
         const edgeW = edgeMagMap[flat];
 
-        // Center-face priority + edge saliency filter for fine brushes so strokes focus where detail matters!
-        const distCenter = Math.hypot((jx - PAINT_RES * 0.5) / (PAINT_RES * 0.5), (jy - PAINT_RES * 0.48) / (PAINT_RES * 0.5));
-        const faceBoost = distCenter < 0.72 ? 0.35 : 0.0;
+        const distCenter = Math.hypot((jx - PAINT_RES * 0.5) / (PAINT_RES * 0.5), (jy - PAINT_RES * 0.45) / (PAINT_RES * 0.5));
+        const faceBoost = distCenter < 0.78 ? 0.36 : 0.0;
 
-        if (tIdx === 4 && edgeW + faceBoost < 0.10 && rng() < 0.35) continue;
-        if (tIdx === 5 && edgeW + faceBoost < 0.14 && rng() < 0.52) continue;
-        if (tIdx === 6 && edgeW + faceBoost < 0.18 && rng() < 0.65) continue;
-        if (tIdx === 7 && edgeW + faceBoost < 0.22 && rng() < 0.72) continue;
+        if (currentStyle === 'pixel') {
+          if (tIdx === 5 && (jx + jy) % 12 === 0 && edgeW + faceBoost < 0.15) continue;
+          if (tIdx === 6 && edgeW + faceBoost < 0.20) continue;
+          if (tIdx === 7 && edgeW + faceBoost < 0.28) continue;
+        } else {
+          if (tIdx === 4 && edgeW + faceBoost < 0.08 && rng() < 0.30) continue;
+          if (tIdx === 5 && edgeW + faceBoost < 0.12 && rng() < 0.45) continue;
+          if (tIdx === 6 && edgeW + faceBoost < 0.15 && rng() < 0.55) continue;
+          if (tIdx === 7 && edgeW + faceBoost < 0.18 && rng() < 0.62) continue;
+        }
 
         const p = flat * 4;
-        const r = srcData[p], g = srcData[p + 1], b = srcData[p + 2];
-        const angle = edgeAngleMap[flat] + (rng() - 0.5) * (tIdx <= 1 ? 0.8 : 0.25);
+        const r = styleTargetPixels[p], g = styleTargetPixels[p + 1], b = styleTargetPixels[p + 2];
+        const angle = edgeAngleMap[flat] + (rng() - 0.5) * (tIdx <= 1 ? 0.65 : 0.22);
 
         tierStrokes.push({
           x: jx,
           y: jy,
           r, g, b,
+          rawLum: normLumMap[flat],
+          edgeW,
           hex: rgbToHex(r, g, b),
           angle,
           tierIdx: tIdx,
           size: bSize,
+          seed: rng(),
           sortKey: Math.floor(jy / (step * 3)) * 1000 + jx * ((Math.floor(jy / (step * 3)) % 2 === 0) ? 1 : -1) + (rng() - 0.5) * 45,
         });
       }
     }
 
-    // Sort strokes in a natural sweeping painter's path so the brush cursor glides smoothly instead of teleporting wildly!
     tierStrokes.sort((a, b) => a.sortKey - b.sortKey);
 
     const n = tierStrokes.length;
@@ -430,8 +1075,19 @@ function analyzeAndPlanImage(imgElement) {
 }
 
 function resetBlankCanvas() {
-  paintCtx.fillStyle = '#f6f2eb';
-  paintCtx.fillRect(0, 0, PAINT_RES, PAINT_RES);
+  if (currentStyle === 'dibujo_tecnico') {
+    paintCtx.fillStyle = '#0d3b66';
+    paintCtx.fillRect(0, 0, PAINT_RES, PAINT_RES);
+  } else if (currentStyle === 'pixel') {
+    paintCtx.fillStyle = '#1b1626';
+    paintCtx.fillRect(0, 0, PAINT_RES, PAINT_RES);
+  } else if (currentStyle === 'ilustracion_cientifica') {
+    paintCtx.fillStyle = '#f4ebd9';
+    paintCtx.fillRect(0, 0, PAINT_RES, PAINT_RES);
+  } else {
+    paintCtx.fillStyle = '#f8f4ec';
+    paintCtx.fillRect(0, 0, PAINT_RES, PAINT_RES);
+  }
   renderedStrokeIdx = 0;
 }
 
@@ -446,57 +1102,103 @@ function restartPainting() {
   }
 }
 
-// Render Single Painterly Brushstroke Dab on paintCanvas
+// Render Single Painterly Brushstroke Dab on paintCanvas across all 23 styles
 function drawBrushStroke(s) {
-  const { x, y, r, g, b, angle, size, tierIdx } = s;
+  const { x, y, r, g, b, angle, size, tierIdx, edgeW, seed } = s;
+
+  // Pixel Art 16-Bits uses crisp retro grid blocks
+  if (currentStyle === 'pixel') {
+    const blockSize = tierIdx === 0 ? 36 : tierIdx === 1 ? 24 : tierIdx === 2 ? 18 : tierIdx === 3 ? 12 : 6;
+    const gx = Math.floor(x / blockSize) * blockSize;
+    const gy = Math.floor(y / blockSize) * blockSize;
+    paintCtx.fillStyle = `rgb(${r},${g},${b})`;
+    paintCtx.fillRect(gx, gy, blockSize, blockSize);
+    if (blockSize >= 12) {
+      paintCtx.fillStyle = 'rgba(255,255,255,0.12)';
+      paintCtx.fillRect(gx, gy, blockSize, 2);
+      paintCtx.fillStyle = 'rgba(0,0,0,0.16)';
+      paintCtx.fillRect(gx, gy + blockSize - 2, blockSize, 2);
+    }
+    return;
+  }
+
+  // Óleo Pincelado & Arte Conceptual & Surrealismo: Impasto 3D bristle ridges
+  if (currentStyle === 'oleo' || currentStyle === 'concept_art' || currentStyle === 'surrealismo') {
+    paintCtx.save();
+    paintCtx.translate(x, y);
+    paintCtx.rotate(angle);
+    const rx = size * (tierIdx <= 1 ? 0.66 : 0.85);
+    const ry = size * (tierIdx <= 1 ? 0.48 : 0.44);
+    paintCtx.fillStyle = `rgba(${r},${g},${b}, ${tierIdx <= 1 ? 0.88 : 0.94})`;
+    paintCtx.beginPath();
+    paintCtx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);
+    paintCtx.fill();
+
+    const hiR = clampByte(r + 24), hiG = clampByte(g + 22), hiB = clampByte(b + 18);
+    const shR = clampByte(r - 22), shG = clampByte(g - 20), shB = clampByte(b - 18);
+    paintCtx.strokeStyle = `rgba(${hiR},${hiG},${hiB}, 0.45)`;
+    paintCtx.lineWidth = Math.max(0.7, ry * 0.20);
+    paintCtx.beginPath();
+    paintCtx.ellipse(0, -ry * 0.20, rx * 0.84, ry * 0.50, 0, Math.PI, Math.PI * 2);
+    paintCtx.stroke();
+
+    const bristles = tierIdx <= 3 ? 3 : 2;
+    for (let bi = 0; bi < bristles; bi++) {
+      const by = ((bi / Math.max(1, bristles - 1)) - 0.5) * ry;
+      paintCtx.strokeStyle = bi % 2 === 0 ? `rgba(${hiR},${hiG},${hiB}, 0.32)` : `rgba(${shR},${shG},${shB}, 0.30)`;
+      paintCtx.beginPath();
+      paintCtx.moveTo(-rx * 0.75, by);
+      paintCtx.quadraticCurveTo(0, by + (seed - 0.5) * ry * 0.3, rx * 0.75, by);
+      paintCtx.stroke();
+    }
+    paintCtx.restore();
+    return;
+  }
+
+  // Base progressive dab using target style color (opaque/semi-opaque so it never turns dark/muddy!)
   paintCtx.save();
   paintCtx.translate(x, y);
   paintCtx.rotate(angle);
 
   if (tierIdx <= 1) {
-    // Pass 1 (126px, 69px): Soft atmospheric radial wash block-in (matches 0:03 screenshot!)
     const rad = size * 0.62;
     const grad = paintCtx.createRadialGradient(0, 0, rad * 0.12, 0, 0, rad);
-    grad.addColorStop(0.0, `rgba(${r},${g},${b}, 0.82)`);
-    grad.addColorStop(0.62, `rgba(${r},${g},${b}, 0.48)`);
+    grad.addColorStop(0.0, `rgba(${r},${g},${b}, 0.84)`);
+    grad.addColorStop(0.65, `rgba(${r},${g},${b}, 0.48)`);
     grad.addColorStop(1.0, `rgba(${r},${g},${b}, 0.0)`);
     paintCtx.fillStyle = grad;
     paintCtx.beginPath();
-    paintCtx.scale(1.18, 0.88);
+    paintCtx.scale(1.15, 0.88);
     paintCtx.arc(0, 0, rad, 0, Math.PI * 2);
     paintCtx.fill();
-  } else if (tierIdx <= 5) {
-    // Passes 2 & 3 (38px, 21px, 12px, 7px): Directional bristle capsule strokes
-    const rx = size * 0.68;
-    const ry = size * 0.36;
+  } else if (tierIdx <= 4) {
+    const rx = size * 0.72;
+    const ry = size * 0.42;
     const grad = paintCtx.createRadialGradient(0, 0, ry * 0.15, 0, 0, rx);
     grad.addColorStop(0.0, `rgba(${r},${g},${b}, 0.90)`);
-    grad.addColorStop(0.75, `rgba(${r},${g},${b}, 0.62)`);
+    grad.addColorStop(0.75, `rgba(${r},${g},${b}, 0.58)`);
     grad.addColorStop(1.0, `rgba(${r},${g},${b}, 0.0)`);
     paintCtx.fillStyle = grad;
-    paintCtx.beginPath();
-    paintCtx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);
-    paintCtx.fill();
-  } else {
-    // Pass 4 (4px, 3px): Fine detail crisp brush dabs + subtle local detail lock-in
-    const rx = size * 0.78;
-    const ry = size * 0.48;
-    paintCtx.fillStyle = `rgba(${r},${g},${b}, 0.92)`;
     paintCtx.beginPath();
     paintCtx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);
     paintCtx.fill();
   }
   paintCtx.restore();
 
-  // At the end of Pass 3 & during Pass 4, gently blend local micro-detail from refCanvas around the brush tip so glasses, eyes, teeth & beard become 100% crisp like the Sundar Pichai 0:20 finale!
-  if (tierIdx >= 6) {
-    const patchR = tierIdx === 6 ? 14 : 20;
+  // In Passes 3 & 4 (12px -> 3px), progressively stamp the crisp stylized detail patch from styleTargetCanvas
+  if (tierIdx >= 4) {
+    const patchR = tierIdx === 4 ? 13 : (tierIdx === 5 ? 15 : (tierIdx === 6 ? 16 : 20));
+    const alpha  = tierIdx === 4 ? 0.38 : (tierIdx === 5 ? 0.55 : (tierIdx === 6 ? 0.72 : 0.88));
     paintCtx.save();
-    paintCtx.globalAlpha = tierIdx === 6 ? 0.24 : 0.42;
+    paintCtx.globalAlpha = alpha;
     paintCtx.beginPath();
     paintCtx.arc(x, y, patchR, 0, Math.PI * 2);
     paintCtx.clip();
-    paintCtx.drawImage(refCanvas, x - patchR, y - patchR, patchR * 2, patchR * 2, x - patchR, y - patchR, patchR * 2, patchR * 2);
+    paintCtx.drawImage(
+      styleTargetCanvas,
+      x - patchR, y - patchR, patchR * 2, patchR * 2,
+      x - patchR, y - patchR, patchR * 2, patchR * 2
+    );
     paintCtx.restore();
   }
 }
@@ -514,11 +1216,11 @@ function advancePaintingToProgress(targetProgress) {
     renderedStrokeIdx++;
   }
 
-  // Final polish pass at >= 99.2% so completed portrait is ultra-crisp painterly HD
-  if (clampedProg >= 0.992) {
+  // Final lock-in polish at 99.2%+ so fine lines, hatching, screentones, and small facial details are 100% sharp
+  if (clampedProg >= 0.992 && currentStyle !== 'oleo' && currentStyle !== 'pixel') {
     paintCtx.save();
-    paintCtx.globalAlpha = 0.22;
-    paintCtx.drawImage(refCanvas, 0, 0);
+    paintCtx.globalAlpha = 0.35;
+    paintCtx.drawImage(styleTargetCanvas, 0, 0);
     paintCtx.restore();
   }
 
@@ -991,6 +1693,7 @@ function startRecordingFromZero() {
 
   mediaRecorder.onstop = () => {
     isRecordingProcess = false;
+    document.body.classList.remove('is-recording');
     const btnRec = document.getElementById('btn-record');
     if (btnRec) {
       btnRec.classList.remove('recording');
@@ -1002,7 +1705,7 @@ function startRecordingFromZero() {
     const url = URL.createObjectURL(lastRecordedBlob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `pintura_progresiva_${Date.now()}.${lastRecordedExt}`;
+    a.download = `pintura_${currentStyle}_${Date.now()}.${lastRecordedExt}`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -1015,6 +1718,7 @@ function startRecordingFromZero() {
   };
 
   isRecordingProcess = true;
+  document.body.classList.add('is-recording');
   mediaRecorder.start(200);
 
   const btnRec = document.getElementById('btn-record');
@@ -1022,10 +1726,11 @@ function startRecordingFromZero() {
     btnRec.classList.add('recording');
     btnRec.textContent = '⏹️ Grabando... (Pulsa para detener)';
   }
-  showToast('🔴 Grabando proceso desde 0:00.0... Se descargará al llegar al 100 %', 3500);
+  showToast('🔴 Grabando proceso limpio desde 0:00.0... Se descargará al llegar al 100 %', 3500);
 }
 
 function stopRecordingProcess() {
+  document.body.classList.remove('is-recording');
   if (mediaRecorder && mediaRecorder.state !== 'inactive') {
     mediaRecorder.stop();
   }
@@ -1051,8 +1756,131 @@ async function shareRecordedVideo() {
 }
 
 // ============================================================================
-// 5. UI EVENT LISTENERS & DETERMINISTIC RENDER HOOKS
+// 5. CATÁLOGO DE 23 ESTILOS EN 5 CATEGORÍAS (VENTANA DESPLEGABLE)
 // ============================================================================
+const STYLE_CATEGORIES = [
+  {
+    category: '1. Tradicionales y Académicos',
+    items: [
+      { id: 'realismo',       icon: '🎨', name: 'Realismo',                desc: 'Proporciones reales, luces y sombras naturales.' },
+      { id: 'hiperrealismo',  icon: '📸', name: 'Hiperrealismo',           desc: 'Nitidez fotográfica extrema, poros y micro-reflejos.' },
+      { id: 'boceto',         icon: '📝', name: 'Boceto (Sketch)',         desc: 'Trazo rápido, suelto y gestual con líneas guía.' },
+      { id: 'carboncillo',    icon: '✏️', name: 'Claroscuro / Carboncillo', desc: 'Esfumino gris plata luminoso y carbón sobre papel claro.' },
+      { id: 'achurado',       icon: '🖊️', name: 'Achurado (Hatching)',     desc: 'Sombreado con líneas paralelas y entrecruzadas.' },
+      { id: 'oleo',           icon: '🖌️', name: 'Óleo Pincelado',          desc: 'Pintura clásica con cerdas visibles y relieve impasto.' },
+    ]
+  },
+  {
+    category: '2. Cómic, Manga y Animación',
+    items: [
+      { id: 'manga',           icon: '🇯🇵', name: 'Manga y Anime',          desc: 'Blanco y negro con tramas de puntos (screentone) y tinta.' },
+      { id: 'chibi',           icon: '🌸', name: 'Chibi',                   desc: 'Proporción tierna estilizada con color pastel cel-shaded.' },
+      { id: 'comic_americano', icon: '💥', name: 'Cómic Americano',         desc: 'Entintado heroico de alto contraste con sombras negras.' },
+      { id: 'linea_clara',     icon: '🕵️', name: 'Línea Clara (Tintín)',    desc: 'Contorno negro uniforme y colores planos limpios.' },
+      { id: 'cartoon',         icon: '📺', name: 'Cartoon / Caricatura',    desc: 'Colores vibrantes animados y contornos expresivos.' },
+    ]
+  },
+  {
+    category: '3. Ilustración Moderna y Digital',
+    items: [
+      { id: 'vectorial',      icon: '📐', name: 'Vectorial / Flat Design', desc: 'Formas geométricas limpias y colores planos sin grano.' },
+      { id: 'linea_continua', icon: '〰️', name: 'Línea Continua (One-Line)', desc: 'Todo el retrato creado con un solo trazo continuo.' },
+      { id: 'concept_art',    icon: '🎬', name: 'Arte Conceptual',         desc: 'Iluminación atmosférica de cine y videojuegos.' },
+      { id: 'doodle',         icon: '✨', name: 'Garabato (Doodle Art)',   desc: 'Relleno denso de patrones, figuras y micro-garabatos.' },
+      { id: 'pixel',          icon: '👾', name: 'Pixel Art 16-Bits',       desc: 'Construido bloque a bloque como videojuego retro.' },
+    ]
+  },
+  {
+    category: '4. Movimientos Artísticos y Expresivos',
+    items: [
+      { id: 'surrealismo', icon: '🌙', name: 'Surrealismo',         desc: 'Atmósfera onírica con ondas y paleta crepuscular.' },
+      { id: 'cubismo',     icon: '🔷', name: 'Cubismo',             desc: 'Descomposición en facetas geométricas multiperspectiva.' },
+      { id: 'pop_art',     icon: '🥫', name: 'Pop Art (Ben-Day)',   desc: 'Colores vibrantes serigráficos y puntos Ben-Day.' },
+      { id: 'zentangle',   icon: '☸️', name: 'Zentangle / Mandala', desc: 'Patrones meditativos estructurados y simétricos.' },
+    ]
+  },
+  {
+    category: '5. Técnicos y Especializados',
+    items: [
+      { id: 'dibujo_tecnico',         icon: '📏', name: 'Dibujo Técnico / CAD',   desc: 'Plano arquitectónico azul (Blueprint) con cotas y grilla.' },
+      { id: 'ilustracion_cientifica', icon: '🌿', name: 'Ilustración Científica', desc: 'Pergamino naturalista con punteado fino y acuarela.' },
+      { id: 'storyboard',             icon: '🎞️', name: 'Storyboard',             desc: 'Viñeta de cine con guías de encuadre y marcador gris.' },
+    ]
+  }
+];
+
+const STYLE_MAP = {};
+STYLE_CATEGORIES.forEach(cat => cat.items.forEach(it => { STYLE_MAP[it.id] = it; }));
+// Alias de compatibilidad
+STYLE_MAP['lapiz'] = STYLE_MAP['carboncillo'];
+STYLE_MAP['realista'] = STYLE_MAP['hiperrealismo'];
+
+const modalBackdrop = document.getElementById('style-modal-backdrop');
+const categoriesContainer = document.getElementById('style-categories-container');
+const currentStyleLabel = document.getElementById('current-style-label');
+
+function buildStyleModalDOM() {
+  if (!categoriesContainer) return;
+  categoriesContainer.innerHTML = '';
+  STYLE_CATEGORIES.forEach((cat) => {
+    const block = document.createElement('div');
+    block.className = 'cat-block';
+
+    const title = document.createElement('div');
+    title.className = 'cat-title';
+    title.textContent = cat.category;
+    block.appendChild(title);
+
+    const grid = document.createElement('div');
+    grid.className = 'style-grid';
+
+    cat.items.forEach((item) => {
+      const btn = document.createElement('button');
+      btn.className = 'style-card-btn' + (item.id === currentStyle ? ' active' : '');
+      btn.setAttribute('data-style', item.id);
+      btn.innerHTML = `
+        <div class="st-name"><span>${item.icon}</span> <span>${item.name}</span></div>
+        <div class="st-desc">${item.desc}</div>
+      `;
+      btn.addEventListener('click', () => {
+        selectArtStyle(item.id);
+        modalBackdrop?.classList.remove('open');
+      });
+      grid.appendChild(btn);
+    });
+
+    block.appendChild(grid);
+    categoriesContainer.appendChild(block);
+  });
+}
+
+function selectArtStyle(styleId) {
+  if (styleId === 'lapiz') styleId = 'carboncillo';
+  if (styleId === 'realista') styleId = 'hiperrealismo';
+  if (!STYLE_MAP[styleId]) return;
+  currentStyle = styleId;
+  const info = STYLE_MAP[styleId];
+  if (currentStyleLabel) currentStyleLabel.textContent = info.name;
+  document.querySelectorAll('.style-card-btn').forEach((b) => {
+    b.classList.toggle('active', b.getAttribute('data-style') === currentStyle);
+  });
+  if (isRecordingProcess) stopRecordingProcess();
+  analyzeAndPlanImage(currentLoadedImage);
+  showToast(`${info.icon} ${info.name} • Pintando de 126px a 3px...`);
+}
+
+document.getElementById('btn-open-styles')?.addEventListener('click', () => {
+  modalBackdrop?.classList.add('open');
+});
+document.getElementById('btn-close-styles')?.addEventListener('click', () => {
+  modalBackdrop?.classList.remove('open');
+});
+modalBackdrop?.addEventListener('click', (e) => {
+  if (e.target === modalBackdrop) modalBackdrop.classList.remove('open');
+});
+
+buildStyleModalDOM();
+
 const fileInput = document.getElementById('file-input');
 document.getElementById('btn-upload')?.addEventListener('click', () => fileInput?.click());
 
@@ -1065,7 +1893,8 @@ fileInput?.addEventListener('change', (e) => {
     img.onload = () => {
       if (isRecordingProcess) stopRecordingProcess();
       analyzeAndPlanImage(img);
-      showToast('📸 ¡Foto cargada! Recreando pintura desde 126px hasta 3px...');
+      const info = STYLE_MAP[currentStyle] || { name: currentStyle };
+      showToast(`📸 ¡Foto cargada en modo ${info.name}!`);
     };
     img.src = ev.target.result;
   };
@@ -1073,7 +1902,6 @@ fileInput?.addEventListener('change', (e) => {
   fileInput.value = '';
 });
 
-// Drag & Drop support on PC
 window.addEventListener('dragover', (e) => e.preventDefault());
 window.addEventListener('drop', (e) => {
   e.preventDefault();
@@ -1085,7 +1913,8 @@ window.addEventListener('drop', (e) => {
       img.onload = () => {
         if (isRecordingProcess) stopRecordingProcess();
         analyzeAndPlanImage(img);
-        showToast('📸 ¡Foto cargada! Recreando pintura paso a paso...');
+        const info = STYLE_MAP[currentStyle] || { name: currentStyle };
+        showToast(`📸 ¡Foto cargada en modo ${info.name}!`);
       };
       img.src = ev.target.result;
     };
@@ -1105,7 +1934,7 @@ document.getElementById('btn-save-img')?.addEventListener('click', () => {
   const url = studioCanvas.toDataURL('image/png');
   const a = document.createElement('a');
   a.href = url;
-  a.download = `estudio_pintura_${Date.now()}.png`;
+  a.download = `estudio_pintura_${currentStyle}_${Date.now()}.png`;
   document.body.appendChild(a);
   a.click();
   a.remove();
@@ -1123,7 +1952,6 @@ document.getElementById('sel-duration')?.addEventListener('change', (e) => {
   showToast(`⏱️ Duración ajustada a ${totalDuration} segundos`);
 });
 
-// Deterministic renderAt(tSeconds) hook for automated verification
 window.renderAt = function(tSeconds) {
   manualSeekMode = true;
   resetBlankCanvas();
@@ -1133,7 +1961,6 @@ window.renderAt = function(tSeconds) {
   renderStudioFrame(prog);
 };
 
-// Main Animation Loop
 function animate(now) {
   if (!manualSeekMode && strokeQueue.length > 0) {
     currentElapsed = (now - animStartTime) / 1000.0;
@@ -1141,7 +1968,6 @@ function animate(now) {
     advancePaintingToProgress(prog);
     renderStudioFrame(prog);
 
-    // If recording from zero, stop automatically ~0.6s after reaching 100%
     if (isRecordingProcess && currentElapsed >= totalDuration + 0.65) {
       stopRecordingProcess();
     }
@@ -1155,11 +1981,23 @@ const initParams = new URLSearchParams(window.location.search);
 if (initParams.get('layout')) {
   layoutMode = initParams.get('layout');
 }
+if (initParams.get('style')) {
+  let st = initParams.get('style');
+  if (st === 'lapiz') st = 'carboncillo';
+  if (st === 'realista') st = 'hiperrealismo';
+  if (STYLE_MAP[st]) {
+    currentStyle = st;
+    if (currentStyleLabel) currentStyleLabel.textContent = STYLE_MAP[st].name;
+    buildStyleModalDOM();
+  }
+}
+if (initParams.get('openModal') === '1') {
+  modalBackdrop?.classList.add('open');
+}
 if (initParams.has('t')) {
   manualSeekMode = true;
 }
 
-// Load Default Demo Portrait on Startup
 const demoImg = new Image();
 demoImg.onload = () => {
   analyzeAndPlanImage(demoImg);
